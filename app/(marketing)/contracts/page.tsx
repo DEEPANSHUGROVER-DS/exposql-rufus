@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ToolPage } from "@/components/ToolPage";
-import { ContractMock } from "@/components/mocks";
+import { InteractiveContract } from "@/components/demos/InteractiveContract";
 import { contractsContent } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default function ContractsPage() {
         <div className="card relative overflow-hidden p-6 shadow-lift">
           <span className="shimmer-sweep" />
           <div className="relative">
-            <ContractMock />
+            <InteractiveContract />
           </div>
         </div>
       }

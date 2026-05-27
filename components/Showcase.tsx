@@ -1,26 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FileText, ListChecks, ShieldAlert } from "lucide-react";
-import { ProposalMock, RfpMock, ContractMock } from "./mocks";
+import { InteractiveProposal } from "./demos/InteractiveProposal";
+import { InteractiveRfp } from "./demos/InteractiveRfp";
+import { InteractiveContract } from "./demos/InteractiveContract";
 
 const tabs = [
-  { key: "proposals", label: "Proposal", icon: FileText, Mock: ProposalMock, caption: "Branded proposal, drafted from a short form." },
-  { key: "rfp", label: "RFP", icon: ListChecks, Mock: RfpMock, caption: "Questions answered from your knowledge base." },
-  { key: "contracts", label: "Contract", icon: ShieldAlert, Mock: ContractMock, caption: "Red flags surfaced in plain English." },
+  { key: "proposals", label: "Proposal", icon: FileText, Demo: InteractiveProposal, caption: "Edit the line items, then generate." },
+  { key: "rfp", label: "RFP", icon: ListChecks, Demo: InteractiveRfp, caption: "Edit the questions, then auto-answer." },
+  { key: "contracts", label: "Contract", icon: ShieldAlert, Demo: InteractiveContract, caption: "Paste a clause, then review." },
 ] as const;
-
-const DURATION = 4200;
 
 export function Showcase() {
   const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    const id = setTimeout(() => setActive((a) => (a + 1) % tabs.length), DURATION);
-    return () => clearTimeout(id);
-  }, [active]);
-
   const Current = tabs[active];
 
   return (
@@ -53,37 +47,21 @@ export function Showcase() {
           })}
         </div>
 
-        <div className="min-h-[230px]">
+        <div className="min-h-[300px]">
           <AnimatePresence mode="wait">
             <motion.div
               key={Current.key}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
-              <Current.Mock />
+              <Current.Demo />
             </motion.div>
           </AnimatePresence>
         </div>
 
-        <div className="mt-5 flex items-center justify-between gap-4">
-          <p className="text-xs text-ink-500">{Current.caption}</p>
-          <div className="flex gap-1.5">
-            {tabs.map((t, i) => (
-              <span key={t.key} className="h-1 w-8 overflow-hidden rounded-full bg-ink-900/10">
-                {i === active && (
-                  <motion.span
-                    className="block h-full rounded-full bg-ink-900/60"
-                    initial={{ width: "0%" }}
-                    animate={{ width: "100%" }}
-                    transition={{ duration: DURATION / 1000, ease: "linear" }}
-                  />
-                )}
-              </span>
-            ))}
-          </div>
-        </div>
+        <p className="mt-5 text-xs text-ink-500">{Current.caption} It&apos;s live — try it.</p>
       </div>
     </div>
   );

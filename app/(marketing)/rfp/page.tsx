@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ToolPage } from "@/components/ToolPage";
-import { CursorWindow } from "@/components/CursorWindow";
+import { InteractiveRfp } from "@/components/demos/InteractiveRfp";
 import { rfpContent } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -11,6 +11,16 @@ export const metadata: Metadata = {
 
 export default function RfpPage() {
   return (
-    <ToolPage content={rfpContent} demo={<CursorWindow />} />
+    <ToolPage
+      content={rfpContent}
+      demo={
+        <div className="card relative overflow-hidden p-6 shadow-lift">
+          <span className="shimmer-sweep" />
+          <div className="relative">
+            <InteractiveRfp />
+          </div>
+        </div>
+      }
+    />
   );
 }

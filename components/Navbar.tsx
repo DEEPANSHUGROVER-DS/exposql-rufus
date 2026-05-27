@@ -58,8 +58,8 @@ export function Navbar() {
             })}
           </div>
 
-          <Link href="/pricing" className="hidden btn-dark py-2.5 text-[13px] md:inline-flex">
-            Get started <ArrowUpRight className="h-4 w-4" />
+          <Link href="/app" className="hidden btn-dark py-2.5 text-[13px] md:inline-flex">
+            Open app <ArrowUpRight className="h-4 w-4" />
           </Link>
 
           <button
@@ -82,8 +82,8 @@ export function Navbar() {
                 {l.label}
               </Link>
             ))}
-            <Link href="/pricing" onClick={() => setOpen(false)} className="btn-dark mt-1">
-              Get started <ArrowUpRight className="h-4 w-4" />
+            <Link href="/app" onClick={() => setOpen(false)} className="btn-dark mt-1">
+              Open app <ArrowUpRight className="h-4 w-4" />
             </Link>
           </motion.div>
         )}

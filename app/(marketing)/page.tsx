@@ -38,8 +38,8 @@ export default function HomePage() {
               off your plate.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/pricing" className="btn-dark">
-                Get started <ArrowUpRight className="h-4 w-4" />
+              <Link href="/app" className="btn-dark">
+                Open the app <ArrowUpRight className="h-4 w-4" />
               </Link>
               <Link href="/proposals" className="btn-soft">
                 See how it works

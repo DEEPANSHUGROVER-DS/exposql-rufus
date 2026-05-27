@@ -1,0 +1,93 @@
+# Rufus pricing strategy (draft for review)
+
+Goal: a credit model where **every AI action costs money**, nothing is
+unlimited, and the credit price always sits well above what the tokens
+actually cost us — so gross margin is structural, not hoped-for.
+
+All numbers live in `lib/pricing.ts` (single source of truth for the marketing
+pricing page and the in-app credit meter). Change them there and both update.
+
+---
+
+## 1. What an AI action costs *us* (token COGS)
+
+Assumes a Sonnet-class Claude model as the workhorse (quality matters for
+proposals and contracts), **prompt caching on** for the knowledge base and for
+uploaded contracts, and rough rates of **$3 / Mtok input, $15 / Mtok output,
+$0.30 / Mtok cached read**.
+
+| Action | Tokens (in / out) | Est. raw cost |
+|---|---|---|
+| Proposal generation | ~2k in / ~3k out | **~$0.05–0.08** |
+| RFP answer (per question, KB cached) | ~0.7k in + 5k cached / ~0.25k out | **~$0.008–0.015** |
+| Contract review (first pass, ≤15k doc) | ~15k in (cache-write) / ~3.5k out | **~$0.12–0.20** |
+| Contract follow-up action (doc cached) | cached read / ~2k out | **~$0.04–0.06** |
+| Inline edit (selected text) | ~0.6k in / ~0.3k out | **~$0.007** |
+
+Worst-case **cost per credit of work ≈ $0.012** (including retries/overhead).
+That single number is the floor everything else is priced against.
+
+## 2. What we charge
+
+**1 credit ≈ $0.10 of customer value.** Against ~$0.012 COGS that is an
+**~8x markup on the cheapest action and 20x+ on proposals** — comfortably
+absorbing the free tier, regenerations, Stripe fees (~2.9% + $0.30), and infra.
+
+### Per-action credit cost (range shown before, actual deducted after)
+
+| Action | Credits | ≈ Charged | ≈ Our cost | Margin |
+|---|---|---|---|---|
+| Generate a proposal | 12–20 | $1.20–2.00 | ~$0.06 | ~96% |
+| Regenerate one section | 3–5 | $0.30–0.50 | ~$0.02 | ~94% |
+| RFP answer | 1 / question | $0.10 | ~$0.012 | ~88% |
+| Review a contract | 10–30 | $1.00–3.00 | ~$0.12–0.30 | ~90% |
+| Re-run contract section | 5–8 | $0.50–0.80 | ~$0.05 | ~90% |
+| Inline AI edit | 1 | $0.10 | ~$0.007 | ~93% |
+
+Manual editing is always free — it spends no tokens, so it costs no credits.
+This is also the main "feels generous" lever without any token risk.
+
+## 3. Plans (recurring)
+
+| Plan | Price/mo | Included credits | Token COGS of allowance | Gross margin* |
+|---|---|---|---|---|
+| Free | $0 | 30 (one-time) | ~$0.36 | acquisition cost |
+| Starter | $39 | 400 | ~$4.80 | ~88% |
+| Growth | $99 | 1,200 | ~$14.40 | ~85% |
+| Scale | $249 | 3,500 | ~$42.00 | ~83% |
+
+\*Before Stripe fees and fixed costs; assumes full allowance is consumed
+(most users won't use 100%, so realised margin is higher).
+
+Effective subscription rate ≈ **$0.0975/credit** — deliberately *below* pack
+pricing so subscriptions are the better deal and recurring revenue is favoured.
+
+## 4. Credit packs (never expire, no subscription required)
+
+| Pack | Price | $/credit |
+|---|---|---|
+| 100 | $15 | $0.150 |
+| 300 | $39 | $0.130 |
+| 750 | $89 | $0.119 |
+| 2,000 | $199 | $0.0995 |
+
+Per-credit price ($0.10–0.15) stays above the worst-case COGS (~$0.012) by
+8–12x and above the subscription rate, so packs are pure upside and never
+undercut plans.
+
+## 5. Why this can't burn us
+
+1. **No unlimited anything.** Every token-spending action debits credits first; spend is capped by what the customer has paid for.
+2. **Credit price >> token cost** on every single action (8x floor, 20x+ typical).
+3. **Block at zero.** AI pauses until top-up; a ledger records every debit/credit.
+4. **Caching** (KB + contracts) keeps repeat actions on the same context cheap, widening margin further.
+5. **Range shown before, actual after** — but "actual" is measured in our
+   margin-loaded credits, not raw tokens, so even a long generation can't go
+   underwater.
+
+## 6. Levers to revisit after real usage data
+
+- If a Haiku-class model is good enough for RFP answers, per-question COGS drops ~3–4x → raise margin or lower the credit price to compete.
+- Tune the contract length → credit curve once we see real document sizes.
+- Watch regeneration rate; if users regen heavily, nudge section-regen credits up.
+- Consider an annual plan (2 months free) to improve LTV and cash flow.

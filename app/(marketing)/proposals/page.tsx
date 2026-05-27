@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ToolPage } from "@/components/ToolPage";
-import { ProposalMock } from "@/components/mocks";
+import { InteractiveProposal } from "@/components/demos/InteractiveProposal";
 import { proposalsContent } from "@/lib/content";
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default function ProposalsPage() {
         <div className="card relative overflow-hidden p-6 shadow-lift">
           <span className="shimmer-sweep" />
           <div className="relative">
-            <ProposalMock />
+            <InteractiveProposal />
           </div>
         </div>
       }

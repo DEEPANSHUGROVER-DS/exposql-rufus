@@ -1,0 +1,70 @@
+import type { AppState } from "./types";
+
+export const seedState: AppState = {
+  profile: {
+    companyName: "Northbeam Studio",
+    website: "northbeam.studio",
+    industry: "Design & web agency",
+    services: ["Brand identity", "Web design", "Web development", "Retainers"],
+    currency: "USD",
+    defaultTone: "Friendly",
+    clientType: "Funded startups & SMBs",
+    onboardingComplete: false,
+    primaryColor: "#1B1A16",
+    accentColor: "#5b5bd6",
+    theme: "Warm",
+    logoUrl: "",
+  },
+  plan: "growth",
+  creditsIncluded: 1200,
+  creditsUsed: 184,
+  knowledge: [
+    {
+      id: "k1",
+      title: "Security overview",
+      body: "All customer data is hosted on AWS in eu-west-1 (Ireland), with encrypted backups in eu-central-1. Access is role-based and logged.",
+      tags: ["security", "infrastructure"],
+      updatedAt: Date.now() - 1000 * 60 * 60 * 24 * 3,
+    },
+    {
+      id: "k2",
+      title: "Data retention policy",
+      body: "Data is encrypted at rest with AES-256 and in transit with TLS 1.2+. Customer data is retained for the life of the contract and deleted within 30 days of termination.",
+      tags: ["security", "compliance"],
+      updatedAt: Date.now() - 1000 * 60 * 60 * 24 * 6,
+    },
+    {
+      id: "k3",
+      title: "Company background",
+      body: "Northbeam Studio is a 12-person design and web agency founded in 2018, serving funded startups and SMBs across North America and the EU.",
+      tags: ["company"],
+      updatedAt: Date.now() - 1000 * 60 * 60 * 24 * 12,
+    },
+    {
+      id: "k4",
+      title: "SLA terms",
+      body: "We target 99.9% monthly uptime for hosted projects, with service credits for any shortfall as defined in the master services agreement.",
+      tags: ["sla", "support"],
+      updatedAt: Date.now() - 1000 * 60 * 60 * 24 * 20,
+    },
+    {
+      id: "k5",
+      title: "Pricing approach",
+      body: "Projects are scoped as fixed-fee phases (discovery, design, build). Retainers start at a monthly minimum with rollover hours. Rates are reviewed annually.",
+      tags: ["pricing", "sales"],
+      updatedAt: Date.now() - 1000 * 60 * 60 * 24 * 28,
+    },
+  ],
+  recent: [
+    { id: "r1", kind: "proposal", title: "Acme Corp — Website redesign", status: "sent", updatedAt: Date.now() - 1000 * 60 * 60 * 5 },
+    { id: "r2", kind: "rfp", title: "Globex security questionnaire", status: "completed", updatedAt: Date.now() - 1000 * 60 * 60 * 28 },
+    { id: "r3", kind: "contract", title: "Initech MSA review", status: "in_review", updatedAt: Date.now() - 1000 * 60 * 60 * 50 },
+    { id: "r4", kind: "proposal", title: "Hooli — Brand sprint", status: "won", updatedAt: Date.now() - 1000 * 60 * 60 * 72 },
+  ],
+  ledger: [
+    { id: "l1", delta: 1200, reason: "Growth plan — monthly credits", at: Date.now() - 1000 * 60 * 60 * 24 * 4 },
+    { id: "l2", delta: -16, reason: "Proposal: Acme Corp — Website redesign", at: Date.now() - 1000 * 60 * 60 * 5 },
+    { id: "l3", delta: -42, reason: "RFP: Globex security questionnaire (42 questions)", at: Date.now() - 1000 * 60 * 60 * 28 },
+    { id: "l4", delta: -24, reason: "Contract review: Initech MSA", at: Date.now() - 1000 * 60 * 60 * 50 },
+  ],
+};
