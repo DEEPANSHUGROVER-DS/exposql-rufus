@@ -19,7 +19,7 @@ const SECTION_KEYS = ["Overview", "Objectives", "Scope of work", "Deliverables",
 type SectionKey = (typeof SECTION_KEYS)[number];
 
 export default function NewProposalPage() {
-  const { profile, spend, remaining, addRecent } = useApp();
+  const { profile, remaining, addRecent, refresh } = useApp();
   const [phase, setPhase] = useState<"form" | "drafting" | "editor">("form");
 
   const [client, setClient] = useState("");
@@ -37,6 +37,8 @@ export default function NewProposalPage() {
   const [slug, setSlug] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [proposalId, setProposalId] = useState<string | null>(null);
 
   const total = useMemo(() => rows.reduce((s, r) => s + r.qty * r.price, 0), [rows]);
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: profile.currency || "USD", maximumFractionDigits: 0 });
@@ -45,36 +47,66 @@ export default function NewProposalPage() {
   const blocked = cost > remaining;
   const canGenerate = client.trim() && title.trim() && !blocked;
 
-  function buildSections(): Record<SectionKey, string> {
-    const svc = profile.services.slice(0, 3).join(", ") || "our services";
-    return {
-      Overview: `${profile.companyName} is pleased to present this proposal to ${client} for ${title}. Drawing on our work in ${profile.industry.toLowerCase()}, we have outlined an approach designed to deliver measurable outcomes${tone === "Concise" ? "." : " while keeping the process collaborative and transparent."}`,
-      Objectives: `The primary objective of ${title} is to address ${client}'s goals through ${svc}. We will align on success metrics up front and report against them throughout the engagement.`,
-      "Scope of work": scope.trim() || `This engagement covers ${svc}, scoped into clear phases with defined deliverables and checkpoints.`,
-      Deliverables: rows.map((r) => `• ${r.item}`).join("\n"),
-      Timeline: timeline.trim() || "To be confirmed during discovery.",
-      Terms: `This proposal is valid for 30 days. Fees are quoted in ${profile.currency}. Payment terms and change-request handling will be confirmed in the statement of work.`,
-      "Next steps": `To proceed, approve this proposal via the e-sign link. ${profile.companyName} will then schedule a kickoff with ${client}.`,
-    };
-  }
+  const formPayload = () => ({
+    client,
+    title,
+    scope,
+    timeline,
+    tone,
+    pricingRows: rows.map((r) => ({ item: r.item, qty: r.qty, price: r.price })),
+  });
 
-  function generate() {
+  async function generate() {
     if (!canGenerate) return;
-    if (!spend(cost, `Proposal: ${title} for ${client}`)) return;
     setPhase("drafting");
-    setTimeout(() => {
-      setSections(buildSections());
+    setError(null);
+    try {
+      const res = await fetch("/api/ai/proposal", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(formPayload()),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(serverError(data, res.status));
+        setPhase("form");
+        return;
+      }
+      setSections(data.sections);
+      setProposalId(data.id ?? null);
       setPhase("editor");
       addRecent({ kind: "proposal", title: `${client} — ${title}`, status: "draft" });
-    }, 1600);
+      void refresh();
+    } catch (e) {
+      setError(String(e));
+      setPhase("form");
+    }
   }
 
-  function regenSection(key: SectionKey) {
+  async function regenSection(key: SectionKey) {
     const c = proposalSectionCost(key);
-    if (!spend(c, `Proposal: regenerate "${key}" (${c}cr)`)) return;
-    const fresh = buildSections();
-    setSections((s) => ({ ...s, [key]: fresh[key] }));
-    flash(`Regenerated “${key}” · ${c}cr`);
+    if (c > remaining) {
+      flash("Not enough credits");
+      return;
+    }
+    setError(null);
+    try {
+      const res = await fetch("/api/ai/proposal", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...formPayload(), regenSectionOnly: key }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(serverError(data, res.status));
+        return;
+      }
+      setSections((s) => ({ ...s, [key]: data.sections[key] ?? s[key] }));
+      flash(`Regenerated “${key}” · ${c}cr`);
+      void refresh();
+    } catch (e) {
+      setError(String(e));
+    }
   }
 
   function publish() {
@@ -89,6 +121,9 @@ export default function NewProposalPage() {
     setTimeout(() => setToast((t) => (t === msg ? null : t)), 2000);
   }
 
+  // Silence the unused-warning for proposalId until we wire the PATCH route.
+  void proposalId;
+
   function copyLink() {
     navigator.clipboard?.writeText(`https://rufus.exposql.com/p/${slug}`).catch(() => {});
     setCopied(true);
@@ -100,6 +135,12 @@ export default function NewProposalPage() {
       <Link href="/app/proposals" className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 hover:text-ink-900">
         <ArrowLeft className="h-4 w-4" /> Proposals
       </Link>
+
+      {error && (
+        <Panel className="mb-5 !bg-rose-500/[0.06]">
+          <p className="text-sm text-rose-700">{error}</p>
+        </Panel>
+      )}
 
       {phase === "form" && (
         <>
@@ -250,6 +291,21 @@ export default function NewProposalPage() {
       </AnimatePresence>
     </div>
   );
+}
+
+function serverError(data: { error?: string; detail?: string }, status: number): string {
+  switch (data?.error) {
+    case "ai_not_configured":
+      return "AI isn't configured yet — set ANTHROPIC_API_KEY on Vercel to enable generation.";
+    case "insufficient_credits":
+      return "Not enough credits. Top up in Settings.";
+    case "client_and_title_required":
+      return "Add a client name and project title before generating.";
+    case "ai_failed":
+      return `AI call failed: ${data.detail ?? "unknown"}`;
+    default:
+      return `Request failed (${status}). ${data?.error ?? ""}`.trim();
+  }
 }
 
 function PricingEditor({

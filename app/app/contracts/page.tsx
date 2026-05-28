@@ -5,13 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Copy, Download, FileText, MessageCircle, ShieldAlert, Sparkles, Wand2 } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, PageHeader, Panel } from "@/components/app/ui";
-
-function followupCost(q: string): number {
-  const len = q.trim().length;
-  if (len > 160) return 5;
-  if (len > 70) return 4;
-  return 3;
-}
+import type { RedFlag, SuggestedEdit } from "@/lib/db/schema";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 type Severity = "high" | "medium" | "low";
@@ -19,26 +13,12 @@ type Tab = "summary" | "flags" | "edits";
 
 const MAX_CHARS = 60000;
 
-const summary = [
-  "Fees: the provider may change pricing during the term.",
-  "Term: the agreement renews automatically for 24 months.",
-  "Liability: no cap on the provider's liability is specified.",
-  "Termination: only the provider may terminate early.",
-  "Confidentiality: mutual, surviving 3 years after termination.",
-];
-
-const redFlags: { severity: Severity; clause: string; reason: string }[] = [
-  { severity: "high", clause: "Auto-renews for 24 months unless cancelled in writing.", reason: "Long lock-in with a one-sided notice burden on you." },
-  { severity: "high", clause: "Provider may modify fees at any time without notice.", reason: "Open-ended price changes with no cap or notice period." },
-  { severity: "medium", clause: "Provider's liability is not capped.", reason: "Exposure is unbounded; most contracts cap at fees paid." },
-  { severity: "low", clause: "Governing law is the provider's home jurisdiction.", reason: "May be inconvenient if a dispute arises." },
-];
-
-const edits = [
-  { original: "auto-renews for 24 months", replacement: "renews for 12 months, with 30 days' written notice to cancel", reason: "Shorter term, fairer notice." },
-  { original: "modify fees at any time without notice", replacement: "modify fees with 60 days' notice, capped at 5% per year", reason: "Predictable, bounded pricing." },
-  { original: "liability is not capped", replacement: "total liability is capped at the fees paid in the prior 12 months", reason: "Bounds your downside." },
-];
+function followupCost(q: string): number {
+  const len = q.trim().length;
+  if (len > 160) return 5;
+  if (len > 70) return 4;
+  return 3;
+}
 
 const sevStyles: Record<Severity, string> = {
   high: "border-silk-blush/50 bg-silk-blush/30 text-ink-800",
@@ -52,6 +32,13 @@ const tabs: { key: Tab; label: string; icon: typeof FileText }[] = [
   { key: "edits", label: "Suggested edits", icon: Wand2 },
 ];
 
+interface ReviewOutput {
+  id: string;
+  summary: string[];
+  redFlags: RedFlag[];
+  suggestedEdits: SuggestedEdit[];
+}
+
 const SAMPLE = `MASTER SERVICES AGREEMENT
 
 1. Fees. The Provider may modify fees at any time without notice.
@@ -61,11 +48,14 @@ const SAMPLE = `MASTER SERVICES AGREEMENT
 5. Governing law. This agreement is governed by the laws of the Provider's home jurisdiction.`;
 
 export default function ContractToolPage() {
-  const { spend, remaining, addRecent } = useApp();
+  const { remaining, addRecent, refresh } = useApp();
   const [text, setText] = useState(SAMPLE);
   const [status, setStatus] = useState<"idle" | "reviewing" | "done">("idle");
   const [tab, setTab] = useState<Tab>("summary");
   const [copied, setCopied] = useState<number | null>(null);
+  const [review, setReview] = useState<ReviewOutput | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const [followups, setFollowups] = useState<{ q: string; a: string; cr: number }[]>([]);
   const [followInput, setFollowInput] = useState("");
   const [followBusy, setFollowBusy] = useState(false);
@@ -74,15 +64,31 @@ export default function ContractToolPage() {
   const cost = Math.min(30, Math.max(10, 10 + Math.floor(text.length / 2500)));
   const blocked = cost > remaining;
 
-  function review() {
+  async function doReview() {
     if (tooLong || blocked || !text.trim()) return;
-    if (!spend(cost, "Contract review")) return;
     setStatus("reviewing");
-    setTimeout(() => {
+    setError(null);
+    try {
+      const res = await fetch("/api/ai/contract", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(serverError(data, res.status));
+        setStatus("idle");
+        return;
+      }
+      setReview({ id: data.id, summary: data.summary, redFlags: data.redFlags, suggestedEdits: data.suggestedEdits });
       setStatus("done");
       setTab("summary");
       addRecent({ kind: "contract", title: "Contract review", status: "in_review" });
-    }, 1500);
+      void refresh();
+    } catch (e) {
+      setError(String(e));
+      setStatus("idle");
+    }
   }
 
   function copyEdit(i: number, val: string) {
@@ -91,22 +97,30 @@ export default function ContractToolPage() {
     setTimeout(() => setCopied((c) => (c === i ? null : c)), 1600);
   }
 
-  function askFollowup() {
+  async function askFollowup() {
     const q = followInput.trim();
-    if (!q) return;
-    const cr = followupCost(q);
-    if (!spend(cr, `Contract follow-up: "${q.slice(0, 40)}…"`)) return;
+    if (!q || followupCost(q) > remaining) return;
     setFollowBusy(true);
-    setTimeout(() => {
-      const a = q.toLowerCase().includes("renew")
-        ? "The contract auto-renews for 24 months. To cancel, written notice is required before the renewal date. We'd recommend changing this to a 12-month term with 30 days' notice."
-        : q.toLowerCase().includes("liab")
-        ? "Liability is uncapped, which is unusual. Most agreements cap it at the fees paid in the prior 12 months. Worth pushing back on."
-        : `Based on the cached contract, here is a plain-English answer to your question: this clause governs how the parties handle the specific situation you asked about. For your review — not legal advice.`;
-      setFollowups((f) => [{ q, a, cr }, ...f]);
+    setError(null);
+    try {
+      const res = await fetch("/api/ai/contract/followup", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text, question: q }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(serverError(data, res.status));
+        return;
+      }
+      setFollowups((f) => [{ q, a: data.answer, cr: data.credits }, ...f]);
       setFollowInput("");
+      void refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
       setFollowBusy(false);
-    }, 900);
+    }
   }
 
   return (
@@ -115,6 +129,12 @@ export default function ContractToolPage() {
         title="Contract review"
         subtitle="Paste a contract and Rufus returns a plain-English summary, red flags, and suggested edits. For your review — not legal advice."
       />
+
+      {error && (
+        <Panel className="mb-5 !bg-rose-500/[0.06]">
+          <p className="text-sm text-rose-700">{error}</p>
+        </Panel>
+      )}
 
       {status !== "done" && (
         <Panel>
@@ -125,7 +145,7 @@ export default function ContractToolPage() {
             spellCheck={false}
             disabled={status === "reviewing"}
             className="input resize-none font-mono text-xs leading-relaxed disabled:opacity-60"
-            placeholder="Paste the contract text (or upload a PDF/DOCX once the backend is connected)…"
+            placeholder="Paste the contract text…"
           />
           {tooLong && (
             <p className="mt-2 text-xs font-medium text-rose-600">
@@ -138,7 +158,7 @@ export default function ContractToolPage() {
               <span>By document length</span>
             </div>
             <button
-              onClick={review}
+              onClick={doReview}
               disabled={status === "reviewing" || tooLong || blocked || !text.trim()}
               className="btn-dark py-2.5 text-[13px] disabled:opacity-50"
             >
@@ -149,7 +169,7 @@ export default function ContractToolPage() {
       )}
 
       <AnimatePresence>
-        {status === "done" && (
+        {status === "done" && review && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ease }}>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-1.5">
@@ -175,7 +195,7 @@ export default function ContractToolPage() {
                 <button className="btn-soft py-2 text-[12px]" onClick={() => {}}>
                   <Download className="h-3.5 w-3.5" /> Export PDF
                 </button>
-                <button onClick={() => setStatus("idle")} className="btn-soft py-2 text-[12px]">
+                <button onClick={() => { setStatus("idle"); setReview(null); setFollowups([]); }} className="btn-soft py-2 text-[12px]">
                   Review another
                 </button>
               </div>
@@ -192,7 +212,7 @@ export default function ContractToolPage() {
                   className="space-y-2.5"
                 >
                   {tab === "summary" &&
-                    summary.map((s, i) => (
+                    review.summary.map((s, i) => (
                       <div key={i} className="flex items-start gap-2.5 text-sm text-ink-600">
                         <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-ink-900/40" />
                         {s}
@@ -200,7 +220,7 @@ export default function ContractToolPage() {
                     ))}
 
                   {tab === "flags" &&
-                    redFlags.map((f, i) => (
+                    review.redFlags.map((f, i) => (
                       <div key={i} className="rounded-2xl border border-ink-900/[0.06] bg-paper-50/70 p-3.5">
                         <span className={`chip text-[10px] ${sevStyles[f.severity]}`}>{f.severity} risk</span>
                         <p className="mt-2 text-sm font-medium text-ink-800">“{f.clause}”</p>
@@ -209,7 +229,7 @@ export default function ContractToolPage() {
                     ))}
 
                   {tab === "edits" &&
-                    edits.map((e, i) => (
+                    review.suggestedEdits.map((e, i) => (
                       <div key={i} className="rounded-2xl border border-ink-900/[0.06] bg-paper-50/70 p-3.5">
                         <p className="text-xs text-ink-400 line-through">{e.original}</p>
                         <p className="mt-1 text-sm font-medium text-ink-800">{e.replacement}</p>
@@ -225,6 +245,16 @@ export default function ContractToolPage() {
                         </div>
                       </div>
                     ))}
+
+                  {tab === "summary" && review.summary.length === 0 && (
+                    <p className="text-xs text-ink-400">No summary returned.</p>
+                  )}
+                  {tab === "flags" && review.redFlags.length === 0 && (
+                    <p className="text-xs text-ink-400">No red flags found.</p>
+                  )}
+                  {tab === "edits" && review.suggestedEdits.length === 0 && (
+                    <p className="text-xs text-ink-400">No suggested edits.</p>
+                  )}
                 </motion.div>
               </AnimatePresence>
             </Panel>
@@ -284,7 +314,7 @@ export default function ContractToolPage() {
                       <span className="text-xs font-semibold text-ink-800">{f.q}</span>
                       <span className="chip shrink-0 text-[10px]">{f.cr}cr</span>
                     </div>
-                    <p className="mt-1.5 text-xs leading-relaxed text-ink-600">{f.a}</p>
+                    <p className="mt-1.5 whitespace-pre-wrap text-xs leading-relaxed text-ink-600">{f.a}</p>
                   </motion.div>
                 ))}
               </AnimatePresence>
@@ -296,4 +326,19 @@ export default function ContractToolPage() {
       </AnimatePresence>
     </div>
   );
+}
+
+function serverError(data: { error?: string; detail?: string }, status: number): string {
+  switch (data?.error) {
+    case "ai_not_configured":
+      return "AI isn't configured yet — set ANTHROPIC_API_KEY on Vercel to enable generation.";
+    case "insufficient_credits":
+      return "Not enough credits. Top up in Settings.";
+    case "too_long":
+      return "Contract is too long. Trim it or split into sections.";
+    case "ai_failed":
+      return `AI call failed: ${data.detail ?? "unknown"}`;
+    default:
+      return `Request failed (${status}). ${data?.error ?? ""}`.trim();
+  }
 }

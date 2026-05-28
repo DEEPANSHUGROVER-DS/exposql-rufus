@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Copy, Plus, RotateCcw, Sparkles } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, PageHeader, Panel } from "@/components/app/ui";
 import { rfpQuestionCost } from "@/lib/pricing";
-import type { KnowledgeEntry } from "@/lib/app/types";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 type Confidence = "high" | "medium" | "low";
@@ -15,43 +14,8 @@ interface Answer {
   question: string;
   answer: string;
   confidence: Confidence;
-  sourceId: string | null;
-  sourceTitle: string | null;
+  sourceEntryId: string | null;
   approved: boolean;
-}
-
-const STOP = new Set(["the", "a", "an", "is", "are", "do", "you", "your", "we", "of", "to", "in", "on", "at", "and", "or", "for", "what", "where", "how", "have", "has", "with", "any", "this", "that", "it", "be", "our"]);
-
-function tokens(s: string): string[] {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length > 2 && !STOP.has(w));
-}
-
-function answerQuestion(q: string, kb: KnowledgeEntry[]): Omit<Answer, "question" | "approved"> {
-  const qt = new Set(tokens(q));
-  let best: { entry: KnowledgeEntry; score: number } | null = null;
-  for (const entry of kb) {
-    const haystack = tokens(`${entry.title} ${entry.tags.join(" ")} ${entry.body}`);
-    let score = 0;
-    for (const w of haystack) if (qt.has(w)) score++;
-    if (!best || score > best.score) best = { entry, score };
-  }
-  if (!best || best.score === 0) {
-    return {
-      answer: "No source found in your knowledge base — please review and add this fact.",
-      confidence: "low",
-      sourceId: null,
-      sourceTitle: null,
-    };
-  }
-  const confidence: Confidence = best.score >= 3 ? "high" : best.score === 2 ? "medium" : "low";
-  // Draft an answer grounded in the matched entry's body (first 1-2 sentences).
-  const sentences = best.entry.body.split(/(?<=[.!?])\s+/);
-  const draft = sentences.slice(0, 2).join(" ");
-  return { answer: draft, confidence, sourceId: best.entry.id, sourceTitle: best.entry.title };
 }
 
 const confStyles: Record<Confidence, string> = {
@@ -67,50 +31,90 @@ Have you completed a SOC 2 audit?
 Tell us about your company background.`;
 
 export default function RfpToolPage() {
-  const { knowledge, spend, remaining, addKnowledge, addRecent } = useApp();
+  const { knowledge, remaining, addKnowledge, addRecent, refresh } = useApp();
   const [text, setText] = useState(SAMPLE);
   const [answers, setAnswers] = useState<Answer[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const questions = text.split("\n").map((l) => l.trim()).filter(Boolean);
   const cost = questions.reduce((s, q) => s + rfpQuestionCost(q), 0);
   const blocked = cost > remaining;
   const emptyKb = knowledge.length === 0;
 
-  function run() {
+  const kbTitleById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const k of knowledge) m.set(k.id, k.title);
+    return m;
+  }, [knowledge]);
+
+  async function run() {
     if (!questions.length || blocked || emptyKb) return;
-    if (!spend(cost, `RFP: ${questions.length} question${questions.length === 1 ? "" : "s"} answered`)) return;
     setBusy(true);
+    setError(null);
     setAnswers(null);
-    setTimeout(() => {
-      setAnswers(questions.map((q) => ({ question: q, approved: false, ...answerQuestion(q, knowledge) })));
-      setBusy(false);
+    try {
+      const res = await fetch("/api/ai/rfp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(serverError(data, res.status));
+        return;
+      }
+      setAnswers(
+        (data.answers ?? []).map((a: Omit<Answer, "approved">) => ({ ...a, approved: false })),
+      );
       addRecent({ kind: "rfp", title: `RFP — ${questions.length} questions`, status: "completed" });
-    }, 1300);
+      void refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function reAnswer(i: number) {
-    const q = answers?.[i]?.question ?? "";
-    const c = rfpQuestionCost(q);
-    if (!spend(c, "RFP: re-answer one question")) return;
-    setAnswers((a) =>
-      a ? a.map((x, j) => (j === i ? { ...x, approved: false, ...answerQuestion(x.question, knowledge) } : x)) : a,
-    );
+  async function reAnswer(i: number) {
+    const q = answers?.[i]?.question;
+    if (!q) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/ai/rfp", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text: q }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(serverError(data, res.status));
+        return;
+      }
+      const fresh: Omit<Answer, "approved"> | undefined = data.answers?.[0];
+      if (!fresh) return;
+      setAnswers((a) =>
+        a ? a.map((x, j) => (j === i ? { ...fresh, approved: false } : x)) : a,
+      );
+      void refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
   }
 
   function approve(i: number) {
     setAnswers((a) => (a ? a.map((x, j) => (j === i ? { ...x, approved: !x.approved } : x)) : a));
   }
-
   function edit(i: number, val: string) {
     setAnswers((a) => (a ? a.map((x, j) => (j === i ? { ...x, answer: val } : x)) : a));
   }
-
   function addFact(q: string) {
     addKnowledge({ title: q.replace(/\?$/, ""), body: "", tags: ["rfp"] });
   }
-
   function copyAll() {
     if (!answers) return;
     const txt = answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join("\n\n");
@@ -131,6 +135,12 @@ export default function RfpToolPage() {
           <p className="text-sm font-medium text-ink-800">Your knowledge base is empty.</p>
           <p className="mt-1 text-sm text-ink-500">Add a few entries first so Rufus has something to answer from.</p>
           <a href="/app/knowledge" className="btn-dark mt-4 py-2.5 text-[13px]">Add knowledge</a>
+        </Panel>
+      )}
+
+      {error && (
+        <Panel className="mb-5 !bg-rose-500/[0.06]">
+          <p className="text-sm text-rose-700">{error}</p>
         </Panel>
       )}
 
@@ -176,7 +186,7 @@ export default function RfpToolPage() {
       )}
 
       <AnimatePresence>
-        {answers && (
+        {answers && !busy && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="mb-4 flex items-center justify-between">
               <span className="text-sm font-medium text-ink-500">
@@ -194,58 +204,78 @@ export default function RfpToolPage() {
             </div>
 
             <div className="space-y-3">
-              {answers.map((a, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08, ease }}
-                >
-                  <Panel className="!p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="text-sm font-semibold text-ink-800">{a.question}</span>
-                      <span className={`chip shrink-0 text-[10px] ${confStyles[a.confidence]}`}>{a.confidence}</span>
-                    </div>
-                    <textarea
-                      value={a.answer}
-                      onChange={(e) => edit(i, e.target.value)}
-                      rows={2}
-                      className="input mt-2 resize-none text-xs"
-                    />
-                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-[11px] text-ink-400">
-                        {a.sourceTitle ? (
-                          <>Source: <span className="font-medium text-ink-600">{a.sourceTitle}</span></>
-                        ) : (
-                          <button onClick={() => addFact(a.question)} className="inline-flex items-center gap-1 font-semibold text-accent">
-                            <Plus className="h-3 w-3" /> Add fact to knowledge base
-                          </button>
-                        )}
-                      </span>
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => reAnswer(i)}
-                          className="rounded-full border border-ink-900/10 px-2.5 py-1 text-[11px] font-semibold text-ink-600 hover:text-ink-900"
-                        >
-                          Re-answer · {rfpQuestionCost(a.question)}cr
-                        </button>
-                        <button
-                          onClick={() => approve(i)}
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                            a.approved ? "bg-emerald-500 text-white" : "border border-ink-900/10 text-ink-600 hover:text-ink-900"
-                          }`}
-                        >
-                          <Check className="h-3 w-3" /> {a.approved ? "Approved" : "Approve"}
-                        </button>
+              {answers.map((a, i) => {
+                const sourceTitle = a.sourceEntryId ? kbTitleById.get(a.sourceEntryId) : null;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.08, ease }}
+                  >
+                    <Panel className="!p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-sm font-semibold text-ink-800">{a.question}</span>
+                        <span className={`chip shrink-0 text-[10px] ${confStyles[a.confidence]}`}>{a.confidence}</span>
                       </div>
-                    </div>
-                  </Panel>
-                </motion.div>
-              ))}
+                      <textarea
+                        value={a.answer}
+                        onChange={(e) => edit(i, e.target.value)}
+                        rows={3}
+                        className="input mt-2 resize-none text-xs"
+                      />
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-[11px] text-ink-400">
+                          {sourceTitle ? (
+                            <>Source: <span className="font-medium text-ink-600">{sourceTitle}</span></>
+                          ) : (
+                            <button onClick={() => addFact(a.question)} className="inline-flex items-center gap-1 font-semibold text-accent">
+                              <Plus className="h-3 w-3" /> Add fact to knowledge base
+                            </button>
+                          )}
+                        </span>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => reAnswer(i)}
+                            className="rounded-full border border-ink-900/10 px-2.5 py-1 text-[11px] font-semibold text-ink-600 hover:text-ink-900"
+                          >
+                            Re-answer · {rfpQuestionCost(a.question)}cr
+                          </button>
+                          <button
+                            onClick={() => approve(i)}
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                              a.approved ? "bg-emerald-500 text-white" : "border border-ink-900/10 text-ink-600 hover:text-ink-900"
+                            }`}
+                          >
+                            <Check className="h-3 w-3" /> {a.approved ? "Approved" : "Approve"}
+                          </button>
+                        </div>
+                      </div>
+                    </Panel>
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
+}
+
+function serverError(data: { error?: string; detail?: string }, status: number): string {
+  switch (data?.error) {
+    case "ai_not_configured":
+      return "AI isn't configured yet — set ANTHROPIC_API_KEY on Vercel to enable generation.";
+    case "empty_knowledge_base":
+      return "Your knowledge base is empty. Add a few entries first.";
+    case "insufficient_credits":
+      return "Not enough credits. Top up in Settings.";
+    case "unauthenticated":
+      return "Please sign in again.";
+    case "ai_failed":
+      return `AI call failed: ${data.detail ?? "unknown"}`;
+    default:
+      return `Request failed (${status}). ${data?.error ?? ""}`.trim();
+  }
 }

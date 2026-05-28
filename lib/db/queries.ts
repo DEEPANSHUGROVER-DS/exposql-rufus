@@ -152,7 +152,7 @@ export async function grantCredits(
   workspaceId: string,
   amount: number,
   reason: string,
-  source: "purchase" | "grant" = "grant",
+  source: "purchase" | "grant" | "refund" = "grant",
   refId?: string,
 ) {
   const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, workspaceId)).limit(1);
