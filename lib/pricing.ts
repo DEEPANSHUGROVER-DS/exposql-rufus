@@ -126,7 +126,7 @@ export interface ActionCost {
 export const actionCosts: ActionCost[] = [
   { key: "proposal", label: "Generate a proposal", min: 12, max: 20, note: "By output length" },
   { key: "proposalSection", label: "Regenerate one section", min: 3, max: 5, note: "Smaller than a full draft" },
-  { key: "rfpQuestion", label: "Answer an RFP question", min: 1, max: 1, unit: "/ question", note: "Roughly one credit each" },
+  { key: "rfpQuestion", label: "Answer an RFP question", min: 2, max: 4, unit: "/ question", note: "Data recall + analysis + tone-matched answer" },
   { key: "contract", label: "Review a contract", min: 10, max: 30, note: "By document length" },
   { key: "contractAction", label: "Re-run a contract section", min: 5, max: 8, note: "Cheap — contract is cached" },
   { key: "inlineEdit", label: "Inline AI edit (rewrite, shorten…)", min: 1, max: 1, note: "On selected text" },
@@ -134,6 +134,16 @@ export const actionCosts: ActionCost[] = [
 
 export function costByKey(key: string): ActionCost | undefined {
   return actionCosts.find((a) => a.key === key);
+}
+
+/** Credits to answer a single RFP question — varies by length & complexity,
+ * since the model has to recall from the knowledge base, pick the right
+ * source, and write a tone-matched answer. */
+export function rfpQuestionCost(question: string): number {
+  const len = question.trim().length;
+  if (len > 180) return 4;
+  if (len > 80) return 3;
+  return 2;
 }
 
 /** "12–20 credits" / "1 credit" formatting. */

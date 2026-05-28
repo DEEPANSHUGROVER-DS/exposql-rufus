@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, RotateCcw, Sparkles } from "lucide-react";
+import { rfpQuestionCost } from "@/lib/pricing";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -62,7 +63,9 @@ export function InteractiveRfp() {
     setAnswers((a) => (a ? a.map((x, j) => (j === i ? { ...x, approved: !x.approved } : x)) : a));
   }
 
-  const credits = text.split("\n").filter((l) => l.trim()).length;
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const questionCount = lines.length;
+  const credits = lines.reduce((s, q) => s + rfpQuestionCost(q), 0);
 
   return (
     <div>
@@ -79,7 +82,7 @@ export function InteractiveRfp() {
           />
           <div className="mt-3 flex items-center justify-between gap-3">
             <span className="text-[11px] text-ink-400">
-              {credits} question{credits === 1 ? "" : "s"} · ~{credits} credit{credits === 1 ? "" : "s"}
+              {questionCount} question{questionCount === 1 ? "" : "s"} · {credits} credit{credits === 1 ? "" : "s"}
             </span>
             <button
               onClick={run}

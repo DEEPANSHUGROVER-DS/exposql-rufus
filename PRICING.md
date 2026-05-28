@@ -39,10 +39,19 @@ absorbing the free tier, regenerations, Stripe fees (~2.9% + $0.30), and infra.
 |---|---|---|---|---|
 | Generate a proposal | 12–20 | $1.20–2.00 | ~$0.06 | ~96% |
 | Regenerate one section | 3–5 | $0.30–0.50 | ~$0.02 | ~94% |
-| RFP answer | 1 / question | $0.10 | ~$0.012 | ~88% |
+| **RFP answer** | **2–4 / question** | **$0.20–0.40** | **~$0.008–0.02** | **~95%** |
 | Review a contract | 10–30 | $1.00–3.00 | ~$0.12–0.30 | ~90% |
 | Re-run contract section | 5–8 | $0.50–0.80 | ~$0.05 | ~90% |
 | Inline AI edit | 1 | $0.10 | ~$0.007 | ~93% |
+
+**Why RFP answers cost more than a single inline edit.** An RFP answer is not
+just text generation — the model has to recall from the knowledge base, pick
+the right source, write a grounded answer, and match your default tone.
+That work uses cached KB tokens, a longer system prompt, and a self-check
+("if no source, flag rather than invent"). Charging the same as an inline
+rewrite would under-price the most valuable action in the product. The 2–4
+range scales by question length and complexity: short questions = 2, normal =
+3, long-form = 4.
 
 Manual editing is always free — it spends no tokens, so it costs no credits.
 This is also the main "feels generous" lever without any token risk.

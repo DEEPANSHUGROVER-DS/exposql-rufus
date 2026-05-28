@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Copy, Plus, RotateCcw, Sparkles } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, PageHeader, Panel } from "@/components/app/ui";
+import { rfpQuestionCost } from "@/lib/pricing";
 import type { KnowledgeEntry } from "@/lib/app/types";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -73,13 +74,13 @@ export default function RfpToolPage() {
   const [copied, setCopied] = useState(false);
 
   const questions = text.split("\n").map((l) => l.trim()).filter(Boolean);
-  const cost = questions.length;
+  const cost = questions.reduce((s, q) => s + rfpQuestionCost(q), 0);
   const blocked = cost > remaining;
   const emptyKb = knowledge.length === 0;
 
   function run() {
     if (!questions.length || blocked || emptyKb) return;
-    if (!spend(cost, `RFP: ${cost} question${cost === 1 ? "" : "s"} answered`)) return;
+    if (!spend(cost, `RFP: ${questions.length} question${questions.length === 1 ? "" : "s"} answered`)) return;
     setBusy(true);
     setAnswers(null);
     setTimeout(() => {
@@ -90,7 +91,9 @@ export default function RfpToolPage() {
   }
 
   function reAnswer(i: number) {
-    if (!spend(1, "RFP: re-answer one question")) return;
+    const q = answers?.[i]?.question ?? "";
+    const c = rfpQuestionCost(q);
+    if (!spend(c, "RFP: re-answer one question")) return;
     setAnswers((a) =>
       a ? a.map((x, j) => (j === i ? { ...x, approved: false, ...answerQuestion(x.question, knowledge) } : x)) : a,
     );
@@ -144,7 +147,9 @@ export default function RfpToolPage() {
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs text-ink-400">
               <CostBadge label={`${cost} credit${cost === 1 ? "" : "s"}`} />
-              <span>{cost} question{cost === 1 ? "" : "s"} · 1 credit each</span>
+              <span>
+                {questions.length} question{questions.length === 1 ? "" : "s"} · 2–4 credits each, by complexity
+              </span>
             </div>
             <button onClick={run} disabled={!cost || blocked || emptyKb} className="btn-dark py-2.5 text-[13px] disabled:opacity-50">
               <Sparkles className="h-4 w-4" /> {blocked ? "Not enough credits" : "Auto-answer"}
@@ -218,8 +223,11 @@ export default function RfpToolPage() {
                         )}
                       </span>
                       <div className="flex gap-1.5">
-                        <button onClick={() => reAnswer(i)} className="rounded-full border border-ink-900/10 px-2.5 py-1 text-[11px] font-semibold text-ink-600 hover:text-ink-900">
-                          Re-answer · 1cr
+                        <button
+                          onClick={() => reAnswer(i)}
+                          className="rounded-full border border-ink-900/10 px-2.5 py-1 text-[11px] font-semibold text-ink-600 hover:text-ink-900"
+                        >
+                          Re-answer · {rfpQuestionCost(a.question)}cr
                         </button>
                         <button
                           onClick={() => approve(i)}

@@ -133,7 +133,7 @@ export const rfpContent = {
     { n: "02", title: "Rufus drafts answers", body: "Each gets a sourced answer and a confidence score, pulled from your knowledge base." },
     { n: "03", title: "Review & export", body: "Approve, edit, or regenerate single answers, then export to DOCX or copy all." },
   ],
-  pricing: { headline: "Per questionnaire, or credits", body: "Pay per questionnaire, or buy credits — roughly one credit per answered question. Re-answering a single question is one credit." },
+  pricing: { headline: "Per questionnaire, or credits", body: "Pay per questionnaire, or buy credits — typically 2–4 credits per answered question, scaled by complexity, because each answer is recalled from your knowledge base, analysed for the right source, and written in your tone. Re-answering one question is 2 credits." },
   faqs: [
     { q: "What if my knowledge base is empty?", a: "Rufus will prompt you to add entries first — the answers are only as good as your saved knowledge. Building the knowledge base takes minutes." },
     { q: "Will it make up answers?", a: "No. If a question has no good source, Rufus flags it as 'no source found, please review' rather than inventing facts." },
