@@ -39,6 +39,7 @@ interface AppContextValue extends AppState {
   remaining: number;
   status: "loading" | "ready" | "error" | "unauthenticated";
   errorMessage: string | null;
+  isAdmin: boolean;
   /** Synchronous, optimistic. Returns false if balance is too low. The network
    * call happens in the background and rolls back the optimistic update on
    * failure. */
@@ -81,6 +82,7 @@ type WorkspaceResponse = {
     status: string;
     updatedAt: number;
   }>;
+  isAdmin?: boolean;
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -88,6 +90,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [creditsBought, setCreditsBought] = useState(0);
   const [status, setStatus] = useState<AppContextValue["status"]>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isAdminFlag, setIsAdminFlag] = useState(false);
 
   const remaining = Math.max(0, state.creditsIncluded + creditsBought - state.creditsUsed);
 
@@ -139,6 +142,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ledger,
       });
       setCreditsBought(data.workspace.creditsBought);
+      setIsAdminFlag(Boolean(data.isAdmin));
       setStatus("ready");
     } catch (e) {
       setStatus("error");
@@ -277,6 +281,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         remaining,
         status,
         errorMessage,
+        isAdmin: isAdminFlag,
         spend,
         setProfile,
         completeOnboarding,

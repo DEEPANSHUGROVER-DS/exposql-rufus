@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   Settings,
+  Shield,
   ShieldAlert,
   Sparkles,
 } from "lucide-react";
@@ -58,7 +59,7 @@ function CreditMeter() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { profile, plan, remaining, status } = useApp();
+  const { profile, plan, remaining, status, isAdmin } = useApp();
   const [open, setOpen] = useState(false);
 
   const onOnboarding = pathname === "/app/onboarding";
@@ -106,6 +107,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+            {isAdmin && (
+              <Link
+                href="/app/admin"
+                className={`mt-3 flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/[0.06] px-3 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent/[0.12] ${
+                  pathname.startsWith("/app/admin") ? "bg-accent/15" : ""
+                }`}
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
           </nav>
           <div className="mt-auto space-y-3">
             <CreditMeter />

@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db, DB_CONFIGURED } from "@/lib/db";
 import { workspaces, type WorkspaceRow } from "@/lib/db/schema";
 import { ensureUserAndWorkspace, creditsRemaining, listLedger, listRecent, listKnowledge } from "@/lib/db/queries";
+import { isAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -56,6 +57,7 @@ export async function GET() {
     knowledge,
     ledger,
     recent,
+    isAdmin: isAdmin(session.user.email),
   });
 }
 
