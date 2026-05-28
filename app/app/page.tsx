@@ -78,17 +78,23 @@ export default function DashboardPage() {
             <span className="text-xs text-ink-400">{recent.length} total</span>
           </div>
           <div className="divide-y divide-ink-900/[0.06]">
-            {recent.slice(0, 6).map((r) => (
-              <div key={r.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink-800">{r.title}</p>
-                  <p className="text-[11px] text-ink-400">
-                    {kindLabel[r.kind]} · {relativeTime(r.updatedAt)}
-                  </p>
-                </div>
-                <span className={`chip shrink-0 text-[10px] ${statusStyle[r.status]}`}>{statusLabel[r.status]}</span>
-              </div>
-            ))}
+            {recent.slice(0, 6).map((r) => {
+              const href = `/app/${r.kind === "rfp" ? "rfp" : r.kind === "contract" ? "contracts" : "proposals"}/${r.id}`;
+              return (
+                <Link key={r.id} href={href} className="flex items-center justify-between gap-3 py-3 transition-colors hover:bg-paper-100/40 -mx-2 px-2 rounded-lg">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-ink-800">{r.title}</p>
+                    <p className="text-[11px] text-ink-400">
+                      {kindLabel[r.kind]} · {relativeTime(r.updatedAt)}
+                    </p>
+                  </div>
+                  <span className={`chip shrink-0 text-[10px] ${statusStyle[r.status] ?? statusStyle.draft}`}>{statusLabel[r.status] ?? r.status}</span>
+                </Link>
+              );
+            })}
+            {recent.length === 0 && (
+              <p className="py-4 text-sm text-ink-400">Nothing here yet — start a proposal or paste an RFP.</p>
+            )}
           </div>
         </Panel>
 

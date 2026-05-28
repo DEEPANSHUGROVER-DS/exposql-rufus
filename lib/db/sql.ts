@@ -89,6 +89,9 @@ CREATE TABLE IF NOT EXISTS "proposal" (
   "workspace_id" text NOT NULL REFERENCES "workspace"("id") ON DELETE CASCADE,
   "client_name" text NOT NULL,
   "title" text NOT NULL,
+  "scope" text NOT NULL DEFAULT '',
+  "timeline" text NOT NULL DEFAULT '',
+  "tone" text NOT NULL DEFAULT 'Friendly',
   "sections" jsonb NOT NULL DEFAULT '{}'::jsonb,
   "pricing" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "status" text NOT NULL DEFAULT 'draft',
@@ -116,6 +119,7 @@ CREATE TABLE IF NOT EXISTS "contract_review" (
   "workspace_id" text NOT NULL REFERENCES "workspace"("id") ON DELETE CASCADE,
   "title" text NOT NULL DEFAULT 'Contract review',
   "file_name" text NOT NULL DEFAULT '',
+  "source_text" text NOT NULL DEFAULT '',
   "summary" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "red_flags" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "suggested_edits" jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -145,4 +149,10 @@ CREATE TABLE IF NOT EXISTS "credit_purchase" (
   "created_at" timestamp NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS "purchase_workspace_idx" ON "credit_purchase" ("workspace_id");
+
+-- Migration 001: saved-context columns (no-op on fresh installs)
+ALTER TABLE "proposal" ADD COLUMN IF NOT EXISTS "scope" text NOT NULL DEFAULT '';
+ALTER TABLE "proposal" ADD COLUMN IF NOT EXISTS "timeline" text NOT NULL DEFAULT '';
+ALTER TABLE "proposal" ADD COLUMN IF NOT EXISTS "tone" text NOT NULL DEFAULT 'Friendly';
+ALTER TABLE "contract_review" ADD COLUMN IF NOT EXISTS "source_text" text NOT NULL DEFAULT '';
 `.trim();

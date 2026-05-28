@@ -50,7 +50,14 @@ export async function GET() {
       .orderBy(desc(creditPurchases.createdAt))
       .limit(10),
     db
-      .select({ id: users.id, email: users.email, name: users.name, createdAt: users.createdAt, plan: workspaces.plan })
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        createdAt: users.createdAt,
+        plan: workspaces.plan,
+        workspaceId: workspaces.id,
+      })
       .from(users)
       .leftJoin(workspaces, eq(workspaces.ownerId, users.id))
       .orderBy(desc(users.createdAt))

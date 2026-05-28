@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Copy, Download, FileText, MessageCircle, ShieldAlert, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, Check, Copy, Download, FileText, MessageCircle, ShieldAlert, Sparkles, Wand2 } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, PageHeader, Panel } from "@/components/app/ui";
+import { relativeTime } from "@/lib/app/format";
 import type { RedFlag, SuggestedEdit } from "@/lib/db/schema";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -47,6 +49,8 @@ const SAMPLE = `MASTER SERVICES AGREEMENT
 4. Termination. Only the Provider may terminate this agreement before the end of the term.
 5. Governing law. This agreement is governed by the laws of the Provider's home jurisdiction.`;
 
+interface RecentContract { id: string; title: string; createdAt: string }
+
 export default function ContractToolPage() {
   const { remaining, addRecent, refresh } = useApp();
   const [text, setText] = useState(SAMPLE);
@@ -55,6 +59,14 @@ export default function ContractToolPage() {
   const [copied, setCopied] = useState<number | null>(null);
   const [review, setReview] = useState<ReviewOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [recent, setRecent] = useState<RecentContract[]>([]);
+
+  useEffect(() => {
+    void fetch("/api/contracts", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((d) => setRecent(d.items?.slice(0, 5) ?? []))
+      .catch(() => {});
+  }, []);
 
   const [followups, setFollowups] = useState<{ q: string; a: string; cr: number }[]>([]);
   const [followInput, setFollowInput] = useState("");
@@ -136,6 +148,30 @@ export default function ContractToolPage() {
         </Panel>
       )}
 
+      {status === "idle" && recent.length > 0 && (
+        <Panel className="mb-5">
+          <div className="mb-2 flex items-center gap-2">
+            <FileText className="h-4 w-4 text-accent" />
+            <h3 className="text-sm font-semibold text-ink-900">Recent reviews</h3>
+          </div>
+          <div className="space-y-1">
+            {recent.map((r) => (
+              <Link
+                key={r.id}
+                href={`/app/contracts/${r.id}`}
+                className="group flex items-center justify-between gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-paper-100"
+              >
+                <span className="truncate text-sm text-ink-700">{r.title}</span>
+                <span className="flex shrink-0 items-center gap-2 text-[11px] text-ink-400">
+                  {relativeTime(+new Date(r.createdAt))}
+                  <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </Panel>
+      )}
+
       {status !== "done" && (
         <Panel>
           <textarea
@@ -164,6 +200,17 @@ export default function ContractToolPage() {
             >
               <Sparkles className="h-4 w-4" /> {status === "reviewing" ? "Reviewing…" : blocked ? "Not enough credits" : "Review contract"}
             </button>
+          </div>
+        </Panel>
+      )}
+
+      {status === "done" && review && (
+        <Panel className="mb-4 !bg-emerald-500/[0.06]">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-ink-700">Saved · you can reopen this review any time.</p>
+            <Link href={`/app/contracts/${review.id}`} className="btn-soft py-2 text-[12px]">
+              Open as page <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
         </Panel>
       )}

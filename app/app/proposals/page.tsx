@@ -71,24 +71,26 @@ export default function ProposalsListPage() {
       {items && items.length > 0 && (
         <div className="space-y-3">
           {items.map((p, i) => (
-            <Panel key={p.id} index={i} className="!p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-2xl bg-silk-lav/40">
-                    <FileText className="h-5 w-5 text-ink-900" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-ink-900">
-                      {p.clientName} — {p.title}
-                    </p>
-                    <p className="text-[11px] text-ink-400">Updated {relativeTime(+new Date(p.updatedAt))}</p>
+            <Link key={p.id} href={`/app/proposals/${p.id}`}>
+              <Panel index={i} className="group !p-4 transition-shadow hover:shadow-lift">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-10 w-10 place-items-center rounded-2xl bg-silk-lav/40">
+                      <FileText className="h-5 w-5 text-ink-900" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-ink-900">
+                        {p.clientName} — {p.title}
+                      </p>
+                      <p className="text-[11px] text-ink-400">Updated {relativeTime(+new Date(p.updatedAt))}</p>
+                    </div>
                   </div>
+                  <span className={`chip shrink-0 text-[10px] ${statusStyle[p.status] ?? statusStyle.draft}`}>
+                    {statusLabel[p.status] ?? p.status}
+                  </span>
                 </div>
-                <span className={`chip shrink-0 text-[10px] ${statusStyle[p.status] ?? statusStyle.draft}`}>
-                  {statusLabel[p.status] ?? p.status}
-                </span>
-              </div>
-            </Panel>
+              </Panel>
+            </Link>
           ))}
         </div>
       )}

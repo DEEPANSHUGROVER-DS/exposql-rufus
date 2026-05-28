@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Shield, Sparkles } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
@@ -28,7 +29,7 @@ interface Stats {
     amount: number;
     createdAt: string;
   }>;
-  recentUsers: Array<{ id: string; email: string; name: string | null; plan: string | null; createdAt: string }>;
+  recentUsers: Array<{ id: string; email: string; name: string | null; plan: string | null; workspaceId: string | null; createdAt: string }>;
   recentLedger: Array<{ id: string; workspaceId: string; delta: number; reason: string; source: string; createdAt: string }>;
 }
 
@@ -179,18 +180,31 @@ export default function AdminPage() {
         <Panel>
           <h2 className="text-sm font-semibold text-ink-900">Recent users</h2>
           <div className="mt-3 divide-y divide-ink-900/[0.06]">
-            {stats?.recentUsers.map((u) => (
-              <div key={u.id} className="flex items-center justify-between gap-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="truncate text-sm text-ink-700">{u.name || u.email}</p>
-                  <p className="truncate text-[11px] text-ink-400">{u.email}</p>
-                </div>
-                <div className="text-right">
-                  <span className="chip text-[10px] capitalize">{u.plan ?? "—"}</span>
-                  <p className="mt-1 text-[10px] text-ink-400">{relativeTime(+new Date(u.createdAt))}</p>
-                </div>
-              </div>
-            )) ?? <p className="py-3 text-xs text-ink-400">Loading…</p>}
+            {stats?.recentUsers.map((u) => {
+              const inner = (
+                <>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-ink-700">{u.name || u.email}</p>
+                    <p className="truncate text-[11px] text-ink-400">{u.email}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="chip text-[10px] capitalize">{u.plan ?? "—"}</span>
+                    <p className="mt-1 text-[10px] text-ink-400">{relativeTime(+new Date(u.createdAt))}</p>
+                  </div>
+                </>
+              );
+              return u.workspaceId ? (
+                <Link
+                  key={u.id}
+                  href={`/app/admin/workspaces/${u.workspaceId}`}
+                  className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-2.5 transition-colors hover:bg-paper-100"
+                >
+                  {inner}
+                </Link>
+              ) : (
+                <div key={u.id} className="flex items-center justify-between gap-3 py-2.5">{inner}</div>
+              );
+            }) ?? <p className="py-3 text-xs text-ink-400">Loading…</p>}
             {stats?.recentUsers.length === 0 && <p className="py-3 text-xs text-ink-400">No users yet.</p>}
           </div>
         </Panel>

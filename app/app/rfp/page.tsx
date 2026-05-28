@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Copy, Plus, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Copy, ListChecks, Plus, RotateCcw, Sparkles } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, PageHeader, Panel } from "@/components/app/ui";
 import { rfpQuestionCost } from "@/lib/pricing";
+import { relativeTime } from "@/lib/app/format";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 type Confidence = "high" | "medium" | "low";
@@ -30,13 +32,24 @@ What is your uptime SLA?
 Have you completed a SOC 2 audit?
 Tell us about your company background.`;
 
+interface RecentRfp { id: string; title: string; updatedAt: string }
+
 export default function RfpToolPage() {
   const { knowledge, remaining, addKnowledge, addRecent, refresh } = useApp();
   const [text, setText] = useState(SAMPLE);
   const [answers, setAnswers] = useState<Answer[] | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recent, setRecent] = useState<RecentRfp[]>([]);
+
+  useEffect(() => {
+    void fetch("/api/rfp", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((d) => setRecent(d.items?.slice(0, 5) ?? []))
+      .catch(() => {});
+  }, []);
 
   const questions = text.split("\n").map((l) => l.trim()).filter(Boolean);
   const cost = questions.reduce((s, q) => s + rfpQuestionCost(q), 0);
@@ -68,6 +81,7 @@ export default function RfpToolPage() {
       setAnswers(
         (data.answers ?? []).map((a: Omit<Answer, "approved">) => ({ ...a, approved: false })),
       );
+      setSavedId(data.id ?? null);
       addRecent({ kind: "rfp", title: `RFP — ${questions.length} questions`, status: "completed" });
       void refresh();
     } catch (e) {
@@ -141,6 +155,41 @@ export default function RfpToolPage() {
       {error && (
         <Panel className="mb-5 !bg-rose-500/[0.06]">
           <p className="text-sm text-rose-700">{error}</p>
+        </Panel>
+      )}
+
+      {!answers && recent.length > 0 && (
+        <Panel className="mb-5">
+          <div className="mb-2 flex items-center gap-2">
+            <ListChecks className="h-4 w-4 text-accent" />
+            <h3 className="text-sm font-semibold text-ink-900">Recent responses</h3>
+          </div>
+          <div className="space-y-1">
+            {recent.map((r) => (
+              <Link
+                key={r.id}
+                href={`/app/rfp/${r.id}`}
+                className="group flex items-center justify-between gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-paper-100"
+              >
+                <span className="truncate text-sm text-ink-700">{r.title}</span>
+                <span className="flex shrink-0 items-center gap-2 text-[11px] text-ink-400">
+                  {relativeTime(+new Date(r.updatedAt))}
+                  <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      {answers && savedId && (
+        <Panel className="mb-4 !bg-emerald-500/[0.06]">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-ink-700">Saved · you can reopen this response any time.</p>
+            <Link href={`/app/rfp/${savedId}`} className="btn-soft py-2 text-[12px]">
+              Open as page <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </Panel>
       )}
 

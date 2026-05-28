@@ -12,7 +12,7 @@ import type { KnowledgeEntry } from "@/lib/app/types";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 export default function KnowledgePage() {
-  const { knowledge, addKnowledge, updateKnowledge, removeKnowledge, spend, remaining } = useApp();
+  const { knowledge, addKnowledge, updateKnowledge, removeKnowledge, remaining } = useApp();
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState<string | null>(null);
   const [editing, setEditing] = useState<KnowledgeEntry | "new" | null>(null);
@@ -134,11 +134,8 @@ export default function KnowledgePage() {
           <ImportModal
             remaining={remaining}
             onClose={() => setImportOpen(false)}
-            onImport={(entries, cost) => {
-              if (cost > 0 && !spend(cost, `Knowledge import: ${entries.length} entries`)) return false;
-              entries.forEach((e) => addKnowledge(e));
+            onDone={() => {
               setImportOpen(false);
-              return true;
             }}
           />
         )}
@@ -233,16 +230,60 @@ function EntryModal({
 function ImportModal({
   remaining,
   onClose,
-  onImport,
+  onDone,
 }: {
   remaining: number;
   onClose: () => void;
-  onImport: (entries: { title: string; body: string; tags: string[] }[], cost: number) => boolean;
+  onDone: () => void;
 }) {
   const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ inserted: number; detected: number; skipped: number; cost: number } | null>(null);
+  const { refresh } = useApp();
+
   const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
-  const cost = knowledgeImportCost(blocks.length);
-  const blocked = cost > remaining;
+  const estimatedCost = knowledgeImportCost(blocks.length);
+  const blocked = estimatedCost > remaining;
+
+  async function run() {
+    if (!text.trim() || blocked) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/ai/knowledge-import", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(
+          data?.error === "ai_not_configured"
+            ? "AI isn't configured yet — set ANTHROPIC_API_KEY on Vercel."
+            : data?.error === "free_plan_knowledge_cap"
+            ? `Free plan is capped at ${data.cap ?? 3} knowledge entries. Upgrade to add more.`
+            : data?.error === "insufficient_credits"
+            ? "Not enough credits to import. Top up in Settings."
+            : data?.error || `Failed (${res.status})`,
+        );
+        return;
+      }
+      setResult({
+        inserted: data.inserted ?? 0,
+        detected: data.detected ?? 0,
+        skipped: data.skipped ?? 0,
+        cost: data.cost ?? 0,
+      });
+      void refresh();
+      // Stay open briefly so the user sees the result, then close.
+      setTimeout(onDone, 1400);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <Backdrop onClose={onClose}>
@@ -253,38 +294,37 @@ function ImportModal({
         </button>
       </div>
       <p className="mt-2 text-sm text-ink-500">
-        Paste a block of text and Rufus splits it into suggested entries (one per paragraph). Costs credits.
+        Paste a block of text — company info, policies, FAQs — and Rufus splits it into structured
+        entries with tags. Costs ~2 credits per entry.
       </p>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={7}
-        className="input mt-4 resize-none"
+        disabled={busy}
+        className="input mt-4 resize-none disabled:opacity-60"
         placeholder={"Paste your company info, policies, FAQs…\n\nSeparate topics with a blank line."}
       />
+
+      {error && <p className="mt-3 text-xs font-medium text-rose-600">{error}</p>}
+      {result && (
+        <p className="mt-3 text-xs font-medium text-emerald-700">
+          Imported {result.inserted} of {result.detected} detected entr{result.detected === 1 ? "y" : "ies"}
+          {result.skipped > 0 ? ` (${result.skipped} skipped — plan cap)` : ""} · {result.cost} credits.
+        </p>
+      )}
+
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-ink-400">
-          <CostBadge label={`${cost} credit${cost === 1 ? "" : "s"}`} />
-          <span>{blocks.length} entr{blocks.length === 1 ? "y" : "ies"} · 2cr each</span>
+          <CostBadge label={`~${estimatedCost} credit${estimatedCost === 1 ? "" : "s"}`} />
+          <span>{blocks.length} block{blocks.length === 1 ? "" : "s"} · ~2cr each</span>
         </div>
         <button
-          onClick={() =>
-            onImport(
-              blocks.map((b, i) => {
-                const [first, ...rest] = b.split("\n");
-                return {
-                  title: (first || `Imported entry ${i + 1}`).slice(0, 60),
-                  body: rest.length ? rest.join("\n").trim() : b,
-                  tags: ["imported"],
-                };
-              }),
-              cost,
-            )
-          }
-          disabled={!blocks.length || blocked}
+          onClick={run}
+          disabled={!blocks.length || blocked || busy}
           className="btn-dark py-2.5 text-[13px] disabled:opacity-50"
         >
-          {blocked ? "Not enough credits" : "Split & import"}
+          {busy ? "Importing…" : blocked ? "Not enough credits" : "Split & import"}
         </button>
       </div>
     </Backdrop>

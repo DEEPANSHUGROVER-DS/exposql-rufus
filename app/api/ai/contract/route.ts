@@ -62,6 +62,7 @@ export async function POST(req: Request) {
       workspaceId: workspace.id,
       title: fileName || "Contract review",
       fileName,
+      sourceText: text,
       summary: review.summary,
       redFlags: review.redFlags,
       suggestedEdits: review.suggestedEdits,
