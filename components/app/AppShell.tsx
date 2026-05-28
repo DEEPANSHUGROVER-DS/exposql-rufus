@@ -9,11 +9,13 @@ import {
   FileText,
   LayoutDashboard,
   ListChecks,
+  LogOut,
   Menu,
   Settings,
   ShieldAlert,
   Sparkles,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { Logo } from "@/components/Logo";
 import { useApp } from "./AppProvider";
 
@@ -56,16 +58,19 @@ function CreditMeter() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { profile, plan, remaining } = useApp();
+  const { profile, plan, remaining, status } = useApp();
   const [open, setOpen] = useState(false);
 
   const onOnboarding = pathname === "/app/onboarding";
+  const displayName = profile.companyName.trim() || "Workspace";
+  const avatarChar = (profile.companyName.trim() || "W").charAt(0).toUpperCase();
 
   useEffect(() => {
+    if (status !== "ready") return;
     if (!profile.onboardingComplete && !onOnboarding) {
       router.replace("/app/onboarding");
     }
-  }, [profile.onboardingComplete, onOnboarding, router]);
+  }, [status, profile.onboardingComplete, onOnboarding, router]);
 
   useEffect(() => setOpen(false), [pathname]);
 
@@ -104,6 +109,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
           <div className="mt-auto space-y-3">
             <CreditMeter />
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="flex w-full items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium text-ink-500 transition-colors hover:bg-ink-900/[0.05] hover:text-ink-900"
+            >
+              <LogOut className="h-3.5 w-3.5" /> Sign out
+            </button>
             <Link href="/" className="block px-3 text-[11px] text-ink-400 transition-colors hover:text-ink-900">
               ← Back to rufus.exposql.com
             </Link>
@@ -126,14 +138,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Menu className="h-4 w-4" />
           </button>
           <div className="hidden text-sm font-medium text-ink-500 lg:block">
-            {profile.companyName} · <span className="capitalize text-ink-400">{plan} plan</span>
+            {displayName} · <span className="capitalize text-ink-400">{plan} plan</span>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/app/settings" className="text-xs font-semibold text-ink-500 hover:text-ink-900">
               {remaining.toLocaleString()} credits
             </Link>
             <span className="grid h-8 w-8 place-items-center rounded-full bg-ink-900 text-xs font-semibold text-paper-50">
-              {profile.companyName.slice(0, 1)}
+              {avatarChar}
             </span>
           </div>
         </header>

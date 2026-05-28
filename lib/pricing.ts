@@ -26,30 +26,33 @@ export const CREDIT_PRICE_USD = {
 export const CREDIT_COGS_USD = 0.012;
 
 export interface Plan {
-  key: string;
+  key: "free" | "starter" | "growth" | "scale";
   name: string;
   tagline: string;
-  priceMonthly: number | null; // null = custom/contact
+  priceMonthly: number | null;
   includedCredits: number;
   note: string;
   features: string[];
   featured: boolean;
+  /** Stripe price ID for paid plans (null for Free). */
+  stripePriceKey: "starter" | "growth" | "scale" | null;
 }
 
 export const plans: Plan[] = [
   {
     key: "free",
     name: "Free",
-    tagline: "Try one of each",
+    tagline: "Try one task",
     priceMonthly: 0,
-    includedCredits: 30,
-    note: "One-time credits · outputs watermarked",
+    includedCredits: 20,
+    note: "One-time · outputs watermarked",
     features: [
-      "One proposal, one RFP, one contract review",
+      "Try one proposal OR one contract review",
       "Manual editing always free",
-      "Knowledge base up to 5 entries",
+      "Knowledge base up to 3 entries",
     ],
     featured: false,
+    stripePriceKey: null,
   },
   {
     key: "starter",
@@ -65,6 +68,7 @@ export const plans: Plan[] = [
       "Manual editing free",
     ],
     featured: true,
+    stripePriceKey: "starter",
   },
   {
     key: "growth",
@@ -80,6 +84,7 @@ export const plans: Plan[] = [
       "1,200 AI credits each month",
     ],
     featured: false,
+    stripePriceKey: "growth",
   },
   {
     key: "scale",
@@ -95,10 +100,12 @@ export const plans: Plan[] = [
       "Shared workspace seats",
     ],
     featured: false,
+    stripePriceKey: "scale",
   },
 ];
 
 export interface CreditPack {
+  key: "pack100" | "pack300" | "pack750" | "pack2000";
   credits: number;
   price: number;
 }
@@ -106,10 +113,10 @@ export interface CreditPack {
 /** Packs never expire. Per-credit price stays above the subscription rate so
  * recurring plans remain the better value. */
 export const creditPacks: CreditPack[] = [
-  { credits: 100, price: 15 },
-  { credits: 300, price: 39 },
-  { credits: 750, price: 89 },
-  { credits: 2000, price: 199 },
+  { key: "pack100", credits: 100, price: 15 },
+  { key: "pack300", credits: 300, price: 39 },
+  { key: "pack750", credits: 750, price: 89 },
+  { key: "pack2000", credits: 2000, price: 199 },
 ];
 
 export interface ActionCost {

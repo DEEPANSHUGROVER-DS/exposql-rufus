@@ -23,7 +23,11 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-ink-900/[0.06] pt-6 text-xs text-ink-400 sm:flex-row sm:items-center">
-          <span>© {new Date().getFullYear()} Rufus.</span>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <span>© {new Date().getFullYear()} Rufus.</span>
+            <Link href="/privacy" className="transition-colors hover:text-ink-900">Privacy</Link>
+            <Link href="/terms" className="transition-colors hover:text-ink-900">Terms</Link>
+          </div>
           <a href="https://exposql.com" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-ink-900">
             An ExpoSQL AI Labs product →
           </a>

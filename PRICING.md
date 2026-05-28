@@ -90,10 +90,16 @@ This is also the main "feels generous" lever without any token risk.
 
 | Plan | Price/mo | Included credits | Token COGS of allowance | Gross margin* |
 |---|---|---|---|---|
-| Free | $0 | 30 (one-time) | ~$0.36 | acquisition cost |
+| Free | $0 | **20 (one-time)** — enough for one proposal *or* one short contract review | ~$0.24 | acquisition cost |
 | Starter | $39 | 400 | ~$4.80 | ~88% |
 | Growth | $99 | 1,200 | ~$14.40 | ~85% |
 | Scale | $249 | 3,500 | ~$42.00 | ~83% |
+
+**Why Free is one task.** 20 credits lets a curious visitor try the strongest
+flow — drafting a proposal or running a contract review — once, end-to-end.
+It does not let them grind through RFP answers or burn meaningful tokens.
+Outputs are watermarked; knowledge base is capped at 3 entries. Anyone who
+needs more upgrades to Starter.
 
 \*Before Stripe fees and fixed costs; assumes full allowance is consumed
 (most users won't use 100%, so realised margin is higher).
@@ -130,3 +136,20 @@ undercut plans.
 - Tune the contract length → credit curve once we see real document sizes.
 - Watch regeneration rate; if users regen heavily, nudge section-regen credits up.
 - Consider an annual plan (2 months free) to improve LTV and cash flow.
+
+## 7. Live Stripe IDs
+
+Products and prices live in the **Exposql Checklist** account
+(`acct_1TZu9cDs5O82YiC2`). Live IDs are committed to `lib/stripe.ts`; the
+`.env.example` mirrors them so non-prod environments can swap to test mode
+without touching the code.
+
+| Product | Product ID | Price ID | Amount |
+|---|---|---|---|
+| Rufus — Starter Plan | `prod_UbBEk3ZB8WXwei` | `price_1TbysLDs5O82YiC2rqsujnfC` | $39/mo |
+| Rufus — Growth Plan | `prod_UbBEX9KipbdkWN` | `price_1TbysMDs5O82YiC2CZ8E0FBs` | $99/mo |
+| Rufus — Scale Plan | `prod_UbBETtcdpUHk4n` | `price_1TbysMDs5O82YiC29g1ZgPS3` | $249/mo |
+| Rufus — Credit Pack (100) | `prod_UbBEjJn0fFVb1f` | `price_1TbysNDs5O82YiC2NknzSA5H` | $15 |
+| Rufus — Credit Pack (300) | `prod_UbBEKGyNyE3kjv` | `price_1TbysNDs5O82YiC24ankJlzm` | $39 |
+| Rufus — Credit Pack (750) | `prod_UbBEeXotlGN93h` | `price_1TbysODs5O82YiC2mRXGWLOH` | $89 |
+| Rufus — Credit Pack (2,000) | `prod_UbBEn1XveQhld8` | `price_1TbysODs5O82YiC2nbO4luyS` | $199 |

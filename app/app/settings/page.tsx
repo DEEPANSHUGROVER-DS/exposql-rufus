@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { PageHeader, Panel } from "@/components/app/ui";
 import { relativeTime } from "@/lib/app/format";
@@ -11,16 +10,33 @@ const themes = ["Light", "Warm", "Bold"] as const;
 const swatches = ["#1B1A16", "#5b5bd6", "#0f766e", "#b91c1c", "#9333ea", "#2563eb"];
 
 export default function SettingsPage() {
-  const { profile, setProfile, plan, creditsIncluded, creditsUsed, remaining, ledger, grant, reset } = useApp();
+  const { profile, setProfile, plan, creditsIncluded, creditsUsed, remaining, ledger } = useApp();
   const [tab, setTab] = useState<"brand" | "billing">("brand");
-  const [justBought, setJustBought] = useState<number | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const currentPlan = plans.find((p) => p.key === plan);
 
-  function buy(credits: number) {
-    grant(credits, `Credit pack purchase: ${credits.toLocaleString()} credits`);
-    setJustBought(credits);
-    setTimeout(() => setJustBought((c) => (c === credits ? null : c)), 1800);
+  async function checkout(kind: "subscription" | "pack", key: string) {
+    setBusy(key);
+    setError(null);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ kind, key }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setError(data?.error || "Could not start checkout.");
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
@@ -138,46 +154,81 @@ export default function SettingsPage() {
           </Panel>
 
           <Panel>
+            <h3 className="text-sm font-semibold text-ink-900">Upgrade your plan</h3>
+            <p className="mt-1 text-xs text-ink-500">Switches you to Stripe checkout. New allowance lands as soon as payment clears.</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {plans
+                .filter((p) => p.stripePriceKey)
+                .map((p) => {
+                  const isCurrent = plan === p.key;
+                  return (
+                    <div
+                      key={p.key}
+                      className={`rounded-2xl border bg-paper-50/70 p-4 ${
+                        isCurrent ? "border-accent/30 ring-1 ring-accent/20" : "border-ink-900/[0.07]"
+                      }`}
+                    >
+                      <div className="text-sm font-semibold text-ink-900">{p.name}</div>
+                      <div className="text-xs text-ink-400">${p.priceMonthly}/mo · {p.includedCredits.toLocaleString()} credits</div>
+                      <button
+                        onClick={() => checkout("subscription", p.stripePriceKey!)}
+                        disabled={isCurrent || busy === p.stripePriceKey}
+                        className="btn-soft mt-3 w-full py-2 text-[12px] disabled:opacity-50"
+                      >
+                        {isCurrent ? "Current plan" : busy === p.stripePriceKey ? "Opening…" : `Switch to ${p.name}`}
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+          </Panel>
+
+          <Panel>
             <h3 className="text-sm font-semibold text-ink-900">Buy credit packs</h3>
-            <p className="mt-1 text-xs text-ink-500">Credits never expire. (Checkout connects to Stripe later.)</p>
+            <p className="mt-1 text-xs text-ink-500">Credits never expire. Checkout opens in Stripe.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {creditPacks.map((p) => (
-                <div key={p.credits} className="rounded-2xl border border-ink-900/[0.07] bg-paper-50/70 p-4">
+                <div key={p.key} className="rounded-2xl border border-ink-900/[0.07] bg-paper-50/70 p-4">
                   <div className="text-lg font-semibold tracking-[-0.02em] text-ink-900">{p.credits.toLocaleString()}</div>
                   <div className="text-xs text-ink-400">${p.price}</div>
                   <button
-                    onClick={() => buy(p.credits)}
-                    className={`mt-3 w-full rounded-full py-2 text-[12px] font-semibold transition-colors ${
-                      justBought === p.credits ? "bg-emerald-500 text-white" : "btn-soft"
-                    }`}
+                    onClick={() => checkout("pack", p.key)}
+                    disabled={busy === p.key}
+                    className="btn-soft mt-3 w-full py-2 text-[12px] disabled:opacity-50"
                   >
-                    {justBought === p.credits ? <span className="inline-flex items-center gap-1"><Check className="h-3.5 w-3.5" /> Added</span> : "Buy"}
+                    {busy === p.key ? "Opening…" : "Buy"}
                   </button>
                 </div>
               ))}
             </div>
           </Panel>
 
+          {error && (
+            <Panel className="!bg-rose-500/[0.06]">
+              <p className="text-sm text-rose-700">{error}</p>
+            </Panel>
+          )}
+
           <Panel>
             <h3 className="text-sm font-semibold text-ink-900">Credit ledger</h3>
             <div className="mt-3 divide-y divide-ink-900/[0.06]">
-              {ledger.slice(0, 10).map((l) => (
-                <div key={l.id} className="flex items-center justify-between gap-3 py-2.5">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm text-ink-700">{l.reason}</p>
-                    <p className="text-[11px] text-ink-400">{relativeTime(l.at)}</p>
+              {ledger.length ? (
+                ledger.slice(0, 10).map((l) => (
+                  <div key={l.id} className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-ink-700">{l.reason}</p>
+                      <p className="text-[11px] text-ink-400">{relativeTime(l.at)}</p>
+                    </div>
+                    <span className={`shrink-0 text-sm font-semibold ${l.delta < 0 ? "text-ink-900" : "text-emerald-600"}`}>
+                      {l.delta > 0 ? "+" : ""}{l.delta.toLocaleString()}
+                    </span>
                   </div>
-                  <span className={`shrink-0 text-sm font-semibold ${l.delta < 0 ? "text-ink-900" : "text-emerald-600"}`}>
-                    {l.delta > 0 ? "+" : ""}{l.delta.toLocaleString()}
-                  </span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="py-3 text-xs text-ink-400">No activity yet.</p>
+              )}
             </div>
           </Panel>
-
-          <button onClick={reset} className="text-xs font-semibold text-ink-400 hover:text-rose-600">
-            Reset demo data
-          </button>
         </div>
       )}
     </div>

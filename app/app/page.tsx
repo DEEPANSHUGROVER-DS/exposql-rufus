@@ -29,10 +29,12 @@ export default function DashboardPage() {
     { label: "RFPs · Contracts", value: `${counts.rfp} · ${counts.contract}`, sub: "this month" },
   ];
 
+  const firstName = profile.companyName.trim().split(" ")[0] || "there";
+
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title={`Welcome back, ${profile.companyName.split(" ")[0]}`}
+        title={`Welcome back, ${firstName}`}
         subtitle="Your document workspace at a glance. Pick up where you left off, or start something new."
       />
 
