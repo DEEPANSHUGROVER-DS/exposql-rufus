@@ -6,6 +6,7 @@ import { BookOpen, Pencil, Plus, Search, Sparkles, Trash2, X } from "lucide-reac
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, EmptyState, PageHeader, Panel } from "@/components/app/ui";
 import { relativeTime } from "@/lib/app/format";
+import { knowledgeImportCost } from "@/lib/pricing";
 import type { KnowledgeEntry } from "@/lib/app/types";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -240,7 +241,7 @@ function ImportModal({
 }) {
   const [text, setText] = useState("");
   const blocks = text.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
-  const cost = Math.max(1, Math.ceil(blocks.length * 1.5));
+  const cost = knowledgeImportCost(blocks.length);
   const blocked = cost > remaining;
 
   return (
@@ -264,7 +265,7 @@ function ImportModal({
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-ink-400">
           <CostBadge label={`${cost} credit${cost === 1 ? "" : "s"}`} />
-          <span>{blocks.length} entr{blocks.length === 1 ? "y" : "ies"} detected</span>
+          <span>{blocks.length} entr{blocks.length === 1 ? "y" : "ies"} · 2cr each</span>
         </div>
         <button
           onClick={() =>

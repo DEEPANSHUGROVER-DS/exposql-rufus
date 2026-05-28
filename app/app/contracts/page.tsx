@@ -2,9 +2,16 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Copy, Download, FileText, ShieldAlert, Sparkles, Wand2 } from "lucide-react";
+import { Check, Copy, Download, FileText, MessageCircle, ShieldAlert, Sparkles, Wand2 } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, PageHeader, Panel } from "@/components/app/ui";
+
+function followupCost(q: string): number {
+  const len = q.trim().length;
+  if (len > 160) return 5;
+  if (len > 70) return 4;
+  return 3;
+}
 
 const ease = [0.22, 1, 0.36, 1] as const;
 type Severity = "high" | "medium" | "low";
@@ -59,6 +66,9 @@ export default function ContractToolPage() {
   const [status, setStatus] = useState<"idle" | "reviewing" | "done">("idle");
   const [tab, setTab] = useState<Tab>("summary");
   const [copied, setCopied] = useState<number | null>(null);
+  const [followups, setFollowups] = useState<{ q: string; a: string; cr: number }[]>([]);
+  const [followInput, setFollowInput] = useState("");
+  const [followBusy, setFollowBusy] = useState(false);
 
   const tooLong = text.length > MAX_CHARS;
   const cost = Math.min(30, Math.max(10, 10 + Math.floor(text.length / 2500)));
@@ -79,6 +89,24 @@ export default function ContractToolPage() {
     navigator.clipboard?.writeText(val).catch(() => {});
     setCopied(i);
     setTimeout(() => setCopied((c) => (c === i ? null : c)), 1600);
+  }
+
+  function askFollowup() {
+    const q = followInput.trim();
+    if (!q) return;
+    const cr = followupCost(q);
+    if (!spend(cr, `Contract follow-up: "${q.slice(0, 40)}…"`)) return;
+    setFollowBusy(true);
+    setTimeout(() => {
+      const a = q.toLowerCase().includes("renew")
+        ? "The contract auto-renews for 24 months. To cancel, written notice is required before the renewal date. We'd recommend changing this to a 12-month term with 30 days' notice."
+        : q.toLowerCase().includes("liab")
+        ? "Liability is uncapped, which is unusual. Most agreements cap it at the fees paid in the prior 12 months. Worth pushing back on."
+        : `Based on the cached contract, here is a plain-English answer to your question: this clause governs how the parties handle the specific situation you asked about. For your review — not legal advice.`;
+      setFollowups((f) => [{ q, a, cr }, ...f]);
+      setFollowInput("");
+      setFollowBusy(false);
+    }, 900);
   }
 
   return (
@@ -200,6 +228,68 @@ export default function ContractToolPage() {
                 </motion.div>
               </AnimatePresence>
             </Panel>
+
+            {/* Follow-ups against the cached contract */}
+            <Panel className="mt-4">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-accent" />
+                <h3 className="text-sm font-semibold text-ink-900">Ask about this contract</h3>
+              </div>
+              <p className="mt-1 text-xs text-ink-500">
+                The contract stays cached — follow-ups cost less than a fresh review.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <input
+                  value={followInput}
+                  onChange={(e) => setFollowInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), askFollowup())}
+                  placeholder="e.g. What does the renewal clause mean?"
+                  disabled={followBusy}
+                  className="input flex-1 text-sm"
+                />
+                <button
+                  onClick={askFollowup}
+                  disabled={!followInput.trim() || followBusy || followupCost(followInput) > remaining}
+                  className="btn-dark py-2.5 text-[13px] disabled:opacity-50"
+                >
+                  Ask · {followupCost(followInput || "x")}cr
+                </button>
+              </div>
+
+              {followBusy && (
+                <div className="mt-3 flex items-center gap-2 text-xs text-ink-500">
+                  <span className="flex h-3 items-center gap-[3px]">
+                    {[0, 1, 2, 3].map((i) => (
+                      <span
+                        key={i}
+                        className="w-[3px] rounded-full bg-gradient-to-b from-silk-peri to-silk-blush animate-eq"
+                        style={{ height: "100%", animationDelay: `${i * 0.1}s` }}
+                      />
+                    ))}
+                  </span>
+                  Recalling the contract…
+                </div>
+              )}
+
+              <AnimatePresence>
+                {followups.map((f, i) => (
+                  <motion.div
+                    key={`${f.q}-${i}`}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ease, duration: 0.35 }}
+                    className="mt-3 rounded-2xl border border-ink-900/[0.06] bg-paper-50/70 p-3.5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="text-xs font-semibold text-ink-800">{f.q}</span>
+                      <span className="chip shrink-0 text-[10px]">{f.cr}cr</span>
+                    </div>
+                    <p className="mt-1.5 text-xs leading-relaxed text-ink-600">{f.a}</p>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </Panel>
+
             <p className="mt-3 text-xs text-ink-400">For your review — not legal advice.</p>
           </motion.div>
         )}

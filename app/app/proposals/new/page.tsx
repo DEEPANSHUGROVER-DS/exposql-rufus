@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, Copy, Download, Link2, Plus, RotateCcw, Sparkles, Trash2 } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, PageHeader, Panel } from "@/components/app/ui";
+import { proposalSectionCost } from "@/lib/pricing";
 import type { Tone } from "@/lib/app/types";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -69,10 +70,11 @@ export default function NewProposalPage() {
   }
 
   function regenSection(key: SectionKey) {
-    if (!spend(4, `Proposal: regenerate "${key}"`)) return;
+    const c = proposalSectionCost(key);
+    if (!spend(c, `Proposal: regenerate "${key}" (${c}cr)`)) return;
     const fresh = buildSections();
     setSections((s) => ({ ...s, [key]: fresh[key] }));
-    flash(`Regenerated “${key}”`);
+    flash(`Regenerated “${key}” · ${c}cr`);
   }
 
   function publish() {
@@ -213,7 +215,7 @@ export default function NewProposalPage() {
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-ink-900">{key}</h3>
                   <button onClick={() => regenSection(key)} className="inline-flex items-center gap-1 text-[11px] font-semibold text-ink-500 hover:text-accent">
-                    <RotateCcw className="h-3 w-3" /> Regenerate · 4cr
+                    <RotateCcw className="h-3 w-3" /> Regenerate · {proposalSectionCost(key)}cr
                   </button>
                 </div>
                 <textarea

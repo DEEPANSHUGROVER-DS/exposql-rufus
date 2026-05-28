@@ -38,10 +38,13 @@ absorbing the free tier, regenerations, Stripe fees (~2.9% + $0.30), and infra.
 | Action | Credits | ≈ Charged | ≈ Our cost | Margin |
 |---|---|---|---|---|
 | Generate a proposal | 12–20 | $1.20–2.00 | ~$0.06 | ~96% |
-| Regenerate one section | 3–5 | $0.30–0.50 | ~$0.02 | ~94% |
+| Regenerate one section | 4–6 | $0.40–0.60 | ~$0.01 | ~96% |
 | **RFP answer** | **2–4 / question** | **$0.20–0.40** | **~$0.008–0.02** | **~95%** |
 | Review a contract | 10–30 | $1.00–3.00 | ~$0.12–0.30 | ~90% |
-| Re-run contract section | 5–8 | $0.50–0.80 | ~$0.05 | ~90% |
+| Ask a follow-up on a contract | 3–5 | $0.30–0.50 | ~$0.02 | ~94% |
+| Re-run a contract section | 5–8 | $0.50–0.80 | ~$0.05 | ~90% |
+| AI import to knowledge base | 2 / entry | $0.20 | ~$0.01 | ~95% |
+| Editor assistant (side panel) | 2–4 | $0.20–0.40 | ~$0.01 | ~95% |
 | Inline AI edit | 1 | $0.10 | ~$0.007 | ~93% |
 
 **Why RFP answers cost more than a single inline edit.** An RFP answer is not
@@ -52,6 +55,33 @@ That work uses cached KB tokens, a longer system prompt, and a self-check
 rewrite would under-price the most valuable action in the product. The 2–4
 range scales by question length and complexity: short questions = 2, normal =
 3, long-form = 4.
+
+**Reruns and context-grounded actions are not free.** Every action that
+re-uses cached context still pays for read + analyse + write + tone match —
+just less than a cold pass. Concretely:
+
+- **Proposal section regen (4–6):** reads workspace profile + the existing
+  draft (for tonal consistency), then writes one section. Heavy sections
+  (Scope, Deliverables, Pricing) = 6; medium (Overview, Objectives, Timeline)
+  = 5; light (Terms, Next steps) = 4. The whole-proposal price (12–20) is
+  *not* simply 8 sections × section regen — the full draft amortises a
+  longer system prompt and runs the sections together.
+- **RFP re-answer one question:** same 2–4 cost as a fresh answer, because
+  the model does the same work — KB recall, source pick, grounded write.
+  We deliberately don't discount re-answers; otherwise users would re-roll
+  every "high"-confidence response to taste-tune for free.
+- **Contract follow-up (3–5):** the contract stays cached after the first
+  review, so follow-ups skip the heavy cache-write. Still pays for cache
+  read + focused output. Scales by question length.
+- **Re-run a contract section (5–8):** a deeper re-analysis of one part
+  (e.g. "rewrite all suggested edits in a stricter tone") — heavier output
+  than a follow-up.
+- **AI knowledge import (2 / entry):** the model has to read a paste, split
+  it into logical entries, write titles, and assign tags. 2 credits per
+  entry detected — predictable so users can plan a big import.
+- **Editor assistant (2–4):** the side-panel assistant answers questions
+  *about the document you're editing* — recall + analyse + answer in tone,
+  like a mini-RFP scoped to one document.
 
 Manual editing is always free — it spends no tokens, so it costs no credits.
 This is also the main "feels generous" lever without any token risk.

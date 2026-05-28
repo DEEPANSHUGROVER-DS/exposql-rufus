@@ -123,13 +123,21 @@ export interface ActionCost {
 
 /** Credit cost shown as a range BEFORE an action runs; actual is deducted
  * after. Every range is set above token cost to preserve margin. */
+/** Credit cost shown as a range BEFORE an action runs; actual is deducted
+ * after. Every range is set above token cost to preserve margin. Reruns and
+ * context-grounded actions are priced to cover the read + analysis + write,
+ * not just the write — cached context is cheaper than a cold pass but not
+ * free. */
 export const actionCosts: ActionCost[] = [
   { key: "proposal", label: "Generate a proposal", min: 12, max: 20, note: "By output length" },
-  { key: "proposalSection", label: "Regenerate one section", min: 3, max: 5, note: "Smaller than a full draft" },
-  { key: "rfpQuestion", label: "Answer an RFP question", min: 2, max: 4, unit: "/ question", note: "Data recall + analysis + tone-matched answer" },
+  { key: "proposalSection", label: "Regenerate one section", min: 4, max: 6, note: "Reads profile + existing draft, then regenerates" },
+  { key: "rfpQuestion", label: "Answer an RFP question", min: 2, max: 4, unit: "/ question", note: "Data recall + analysis + tone (fresh or re-answer)" },
   { key: "contract", label: "Review a contract", min: 10, max: 30, note: "By document length" },
-  { key: "contractAction", label: "Re-run a contract section", min: 5, max: 8, note: "Cheap — contract is cached" },
-  { key: "inlineEdit", label: "Inline AI edit (rewrite, shorten…)", min: 1, max: 1, note: "On selected text" },
+  { key: "contractFollowup", label: "Ask a follow-up about a contract", min: 3, max: 5, note: "Uses the cached contract — read + analyse + answer" },
+  { key: "contractAction", label: "Re-run a contract section", min: 5, max: 8, note: "Re-analyse with the contract still cached" },
+  { key: "knowledgeImport", label: "AI import to knowledge base", min: 2, max: 2, unit: "/ entry", note: "Splits + structures each entry with tags" },
+  { key: "editorAssist", label: "Editor assistant (side panel)", min: 2, max: 4, note: "Recalls the document, then answers in tone" },
+  { key: "inlineEdit", label: "Inline AI edit (rewrite, shorten…)", min: 1, max: 1, note: "On selected text, no recall" },
 ];
 
 export function costByKey(key: string): ActionCost | undefined {
@@ -144,6 +152,23 @@ export function rfpQuestionCost(question: string): number {
   if (len > 180) return 4;
   if (len > 80) return 3;
   return 2;
+}
+
+/** Credits to regenerate a single proposal section. Sections that recall
+ * more deeply (scope, deliverables, pricing) cost more than light sections
+ * (terms, next steps). */
+const HEAVY_SECTIONS = new Set(["Scope of work", "Deliverables", "Pricing"]);
+const LIGHT_SECTIONS = new Set(["Terms", "Next steps"]);
+export function proposalSectionCost(section: string): number {
+  if (HEAVY_SECTIONS.has(section)) return 6;
+  if (LIGHT_SECTIONS.has(section)) return 4;
+  return 5;
+}
+
+/** Credits to AI-import a paste into structured knowledge entries —
+ * roughly 2 credits per detected entry (read + split + tag). */
+export function knowledgeImportCost(entryCount: number): number {
+  return Math.max(2, entryCount * 2);
 }
 
 /** "12–20 credits" / "1 credit" formatting. */
