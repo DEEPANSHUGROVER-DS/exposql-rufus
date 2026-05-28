@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, ArrowRight, FileText, ListChecks, ShieldAlert } from "lucide-react";
+import { ArrowUpRight, ArrowRight, FileText, ListChecks, ShieldAlert, Sparkles } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { Showcase } from "@/components/Showcase";
 import { TaskMarquee } from "@/components/Marquee";
@@ -92,11 +92,20 @@ export default function HomePage() {
                 <Reveal key={t.key} delay={i * 0.1}>
                   <Link
                     href={t.href}
-                    className="card group relative flex h-full flex-col overflow-hidden p-6 transition-shadow duration-300 hover:shadow-lift"
+                    className="card group relative flex h-full flex-col overflow-hidden p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
                   >
                     <span className="shimmer-sweep" />
+                    <span
+                      aria-hidden
+                      className={`pointer-events-none absolute -top-12 -right-12 h-40 w-40 rounded-full ${t.accent}/35 opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100`}
+                    />
+                    <span aria-hidden className="pointer-events-none absolute right-5 top-5 animate-float text-ink-400/40 group-hover:text-accent/70">
+                      <Sparkles className="h-3.5 w-3.5" />
+                    </span>
                     <div className="relative flex items-center gap-3">
-                      <span className={`grid h-10 w-10 place-items-center rounded-2xl ${t.accent}/40`}>
+                      <span
+                        className={`grid h-10 w-10 place-items-center rounded-2xl ${t.accent}/40 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}
+                      >
                         <Icon className="h-5 w-5 text-ink-900" />
                       </span>
                       <span className="text-xs font-medium text-ink-400">{t.audience}</span>
@@ -105,7 +114,7 @@ export default function HomePage() {
                       {t.name}
                     </h3>
                     <p className="relative mt-2 text-sm leading-relaxed text-ink-500">{t.blurb}</p>
-                    <div className="relative mt-6 rounded-2xl border border-ink-900/[0.05] bg-paper-50/60 p-4">
+                    <div className="relative mt-6 rounded-2xl border border-ink-900/[0.05] bg-paper-50/60 p-4 transition-colors duration-500 group-hover:bg-paper-50/90">
                       <Mock />
                     </div>
                     <span className="relative mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-900">
