@@ -3,7 +3,19 @@ import type { MetadataRoute } from "next";
 const base = "https://rufus.exposql.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = ["", "/proposals", "/rfp", "/contracts", "/pricing", "/about"];
+  const routes = [
+    "",
+    "/proposals",
+    "/rfp",
+    "/contracts",
+    "/pricing",
+    "/about",
+    "/privacy",
+    "/terms",
+    "/cookies",
+    "/subprocessors",
+    "/do-not-sell",
+  ];
   const now = new Date();
   return routes.map((route) => ({
     url: `${base}${route}`,

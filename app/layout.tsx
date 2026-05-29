@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { SilkBackground } from "@/components/Silk";
+import { CookieConsentProvider } from "@/components/CookieConsent";
+import { CookieBanner } from "@/components/CookieBanner";
+import { AnalyticsGate } from "@/components/AnalyticsGate";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 const instrument = Instrument_Serif({
@@ -35,8 +38,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${jakarta.variable} ${instrument.variable}`}>
       <body>
-        <SilkBackground />
-        {children}
+        <CookieConsentProvider>
+          <SilkBackground />
+          {children}
+          <CookieBanner />
+          <AnalyticsGate />
+        </CookieConsentProvider>
       </body>
     </html>
   );

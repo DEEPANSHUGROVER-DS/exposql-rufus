@@ -144,14 +144,64 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="13. Changes to these Terms">
+        <Section title="13. Beta features">
+          <p>
+            We may release features marked &ldquo;beta&rdquo;, &ldquo;preview&rdquo;, or similar.
+            These are provided <strong>as-is</strong>, may change or be withdrawn at any time,
+            and may have reduced reliability. Output from beta features still costs credits,
+            and we still credit-refund failed AI calls per section 3.
+          </p>
+        </Section>
+
+        <Section title="14. Refund policy">
+          <p>
+            Subscription fees and credit packs are <strong>non-refundable</strong> except where
+            required by law or at our discretion. If our service is unavailable for a sustained
+            period due to our fault, contact us at{" "}
+            <a href="mailto:hello@exposql.com" className="underline">hello@exposql.com</a> and
+            we will consider a pro-rata credit. Credits consumed by a successful AI generation
+            are not refundable simply because you did not like the output — that is what manual
+            editing is for, and manual editing is free.
+          </p>
+        </Section>
+
+        <Section title="15. Force majeure">
+          <p>
+            Neither party is liable for delays or failures caused by events beyond reasonable
+            control, including but not limited to acts of God, war, terrorism, civil unrest,
+            government action, internet outages, third-party service provider failures
+            (including those of our sub-processors), pandemic, fire, flood, or labour action.
+          </p>
+        </Section>
+
+        <Section title="16. Severability and entire agreement">
+          <p>
+            If any provision of these Terms is held unenforceable, the remaining provisions
+            remain in effect. These Terms, together with the{" "}
+            <Link href="/privacy" className="underline">Privacy Policy</Link>,{" "}
+            <Link href="/cookies" className="underline">Cookie Policy</Link>, and any pricing
+            shown on <Link href="/pricing" className="underline">/pricing</Link>, constitute
+            the entire agreement between you and us regarding the service and supersede prior
+            agreements on the same subject.
+          </p>
+        </Section>
+
+        <Section title="17. Assignment">
+          <p>
+            You may not assign these Terms without our prior written consent. We may assign
+            them to a successor in connection with a merger, acquisition, or sale of assets,
+            provided the successor agrees to honour them.
+          </p>
+        </Section>
+
+        <Section title="18. Changes to these Terms">
           <p>
             We may update these Terms. If a change materially reduces your rights, we&apos;ll give
             you notice and a chance to cancel. Continued use after changes means you accept them.
           </p>
         </Section>
 
-        <Section title="14. Governing law and disputes">
+        <Section title="19. Governing law and disputes">
           <p>
             These Terms are governed by the laws of the jurisdiction in which ExpoSQL AI Labs is
             established, without regard to its conflict-of-laws rules. Disputes will be resolved
@@ -160,7 +210,7 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="15. Contact">
+        <Section title="20. Contact">
           <p>
             Questions: <a href="mailto:hello@exposql.com" className="underline">hello@exposql.com</a>.
           </p>

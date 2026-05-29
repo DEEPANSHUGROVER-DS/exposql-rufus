@@ -98,26 +98,85 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="7. Retention and deletion">
+          <ul className="list-disc space-y-1.5 pl-5">
+            <li><strong>Workspace content</strong> (knowledge base, proposals, RFP responses, contract reviews, brand kit) — retained while your account is active. You can delete individual items at any time. We delete on account closure within 30 days.</li>
+            <li><strong>Account &amp; identity</strong> (name, email, Google user ID) — retained while the account is active; deleted within 30 days of closure.</li>
+            <li><strong>Credit ledger</strong> — retained for as long as the workspace exists, then deleted with it.</li>
+            <li><strong>Billing records</strong> (Stripe receipts, invoices) — retained for 7 years after the transaction, as required by tax and accounting laws.</li>
+            <li><strong>Server logs</strong> — typically 30–90 days for security and debugging; longer when investigating an incident.</li>
+            <li><strong>Backups</strong> — encrypted database backups roll off on Neon&apos;s retention schedule, typically within 30 days.</li>
+          </ul>
           <p>
-            We retain workspace data while your account is active. You can delete individual
-            entries or your entire workspace from within the product. After account deletion we
-            remove personal data within 30 days, except where we are required to retain it
-            (e.g. for tax/accounting records related to payments).
+            Deletion may take longer where data has propagated to backups; we ensure deleted
+            data is not restored to active systems and is overwritten on the normal backup
+            rotation.
           </p>
         </Section>
 
         <Section title="8. Cookies and analytics">
           <p>
-            We set a session cookie for authentication. We may add privacy-preserving analytics
-            (e.g. anonymised page-view counts). We do not use third-party advertising cookies.
+            We set a session cookie for authentication and store your cookie preferences in
+            local storage. Analytics and marketing cookies are <strong>off by default</strong>;
+            they only load if you opt in via our banner, and we honour the Global Privacy
+            Control browser signal as an automatic opt-out. Full detail in the{" "}
+            <Link href="/cookies" className="underline">Cookie Policy</Link>.
           </p>
         </Section>
 
-        <Section title="9. Your rights">
+        <Section title="9. Your rights — everyone">
           <p>
-            Depending on where you live, you may have the right to access, correct, export, or
-            delete the personal data we hold about you, and to object to or restrict certain
-            processing. Email us and we&apos;ll respond within a reasonable time.
+            Wherever you live, you may ask us to access, correct, export, or delete the
+            personal data we hold about you, and to object to or restrict certain processing.
+            Email{" "}
+            <a href="mailto:privacy@exposql.com" className="underline">privacy@exposql.com</a>{" "}
+            and we&apos;ll respond within 30 days (45 in California). We may need to verify
+            your identity using information we already hold about you.
+          </p>
+        </Section>
+
+        <Section title="9a. EEA / UK / Swiss residents">
+          <p>
+            For users in the European Economic Area, United Kingdom, or Switzerland, the
+            following supplements section 9.
+          </p>
+          <p><strong>Controller.</strong> ExpoSQL AI Labs is the controller of your personal data for purposes of GDPR / UK GDPR.</p>
+          <p><strong>Legal bases for processing.</strong> We rely on:</p>
+          <ul className="list-disc space-y-1.5 pl-5">
+            <li><em>Contract</em> — to provide the service you signed up for (account creation, document generation, billing).</li>
+            <li><em>Legitimate interests</em> — to keep the service secure, prevent abuse, debug, and improve features. We balance these against your rights and can give you details of the assessment on request.</li>
+            <li><em>Consent</em> — for analytics and marketing cookies, and any optional features that ask for it. Consent can be withdrawn at any time.</li>
+            <li><em>Legal obligation</em> — to keep tax/accounting records, to respond to lawful requests from authorities.</li>
+          </ul>
+          <p>
+            <strong>Your rights</strong> include access, rectification, erasure, restriction,
+            objection, portability, and the right to withdraw consent. You also have the right
+            to <strong>lodge a complaint with your supervisory authority</strong> — for example,
+            the UK ICO or your country&apos;s data-protection authority — though we&apos;d
+            appreciate the chance to address concerns first.
+          </p>
+          <p>
+            <strong>International transfers.</strong> Most of our sub-processors are in the
+            United States. When personal data is transferred from the EEA/UK/Switzerland to a
+            third country without an adequacy decision, we rely on the European
+            Commission&apos;s Standard Contractual Clauses (with the UK addendum where
+            applicable), supplemented by technical and organisational measures the receiver
+            maintains under their DPA. See the{" "}
+            <Link href="/subprocessors" className="underline">Subprocessors</Link> page for the
+            current list.
+          </p>
+        </Section>
+
+        <Section title="9b. California residents">
+          <p>
+            See our dedicated <Link href="/do-not-sell" className="underline">Do Not Sell or
+            Share My Personal Information</Link> page for the full California disclosures,
+            including your rights to know, access, delete, correct, opt out of sale/sharing,
+            and limit the use of sensitive personal information.
+          </p>
+          <p>
+            <strong>Summary:</strong> we do not sell personal information for money, and we do
+            not share it for cross-context behavioural advertising. We honour Global Privacy
+            Control as an automatic opt-out.
           </p>
         </Section>
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
+import { CookiePreferencesButton } from "./CookiePreferencesButton";
 
 const contactEmail = "hello@exposql.com";
 
@@ -27,6 +28,10 @@ export function Footer() {
             <span>© {new Date().getFullYear()} Rufus.</span>
             <Link href="/privacy" className="transition-colors hover:text-ink-900">Privacy</Link>
             <Link href="/terms" className="transition-colors hover:text-ink-900">Terms</Link>
+            <Link href="/cookies" className="transition-colors hover:text-ink-900">Cookies</Link>
+            <Link href="/subprocessors" className="transition-colors hover:text-ink-900">Subprocessors</Link>
+            <Link href="/do-not-sell" className="transition-colors hover:text-ink-900">Do Not Sell or Share</Link>
+            <CookiePreferencesButton className="!text-xs !text-ink-400 !font-normal hover:!text-ink-900" />
           </div>
           <a href="https://exposql.com" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-ink-900">
             An ExpoSQL AI Labs product →
