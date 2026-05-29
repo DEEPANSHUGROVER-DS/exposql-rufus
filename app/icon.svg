@@ -1,0 +1,16 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" role="img" aria-label="Rufus">
+  <defs>
+    <linearGradient id="rufus-bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A9B8FF"/>
+      <stop offset="0.5" stop-color="#C7B8F5"/>
+      <stop offset="1" stop-color="#FFC4D6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#rufus-bg)"/>
+  <path d="M 290 812 V 212 H 580 A 150 150 0 0 1 580 512 H 290 M 580 512 L 740 812"
+        stroke="#1B1A16"
+        stroke-width="88"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"/>
+</svg>
