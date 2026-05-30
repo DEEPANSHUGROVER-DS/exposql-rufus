@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
 import { auth } from "@/auth";
-import { DB_CONFIGURED } from "@/lib/db";
+import { db, DB_CONFIGURED } from "@/lib/db";
+import { contractReviews, type ContractFollowup } from "@/lib/db/schema";
 import { ensureUserAndWorkspace, spendCredits, grantCredits } from "@/lib/db/queries";
 import { ANTHROPIC_CONFIGURED } from "@/lib/ai/anthropic";
 import { askContractFollowup } from "@/lib/ai/contract";
@@ -28,6 +30,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const text = String(body?.text ?? "");
   const question = String(body?.question ?? "").trim();
+  const reviewId = body?.reviewId ? String(body.reviewId) : undefined;
   if (!question) return NextResponse.json({ error: "empty_question" }, { status: 400 });
   if (!text.trim()) return NextResponse.json({ error: "empty_contract" }, { status: 400 });
   if (text.length > MAX_CHARS) return NextResponse.json({ error: "too_long" }, { status: 413 });
@@ -50,6 +53,20 @@ export async function POST(req: Request) {
   } catch (err) {
     await grantCredits(workspace.id, c, "Refund: contract follow-up failed", "refund");
     return NextResponse.json({ error: "ai_failed", detail: String(err).slice(0, 200) }, { status: 502 });
+  }
+
+  // Persist on a saved review if reviewId was provided and belongs to this workspace.
+  if (reviewId) {
+    const [row] = await db
+      .select()
+      .from(contractReviews)
+      .where(and(eq(contractReviews.id, reviewId), eq(contractReviews.workspaceId, workspace.id)))
+      .limit(1);
+    if (row) {
+      const entry: ContractFollowup = { question, answer, credits: c, createdAt: Date.now() };
+      const next = [entry, ...(row.followups as ContractFollowup[])];
+      await db.update(contractReviews).set({ followups: next }).where(eq(contractReviews.id, reviewId));
+    }
   }
 
   return NextResponse.json({ answer, credits: c, remaining: spendRes.remaining });

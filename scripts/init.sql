@@ -63,9 +63,11 @@ CREATE TABLE IF NOT EXISTS "workspace" (
   "credits_bought" integer NOT NULL DEFAULT 0,
   "credits_used" integer NOT NULL DEFAULT 0,
   "logo_url" text NOT NULL DEFAULT '',
+  "logo_blob_url" text,
   "primary_color" text NOT NULL DEFAULT '#1B1A16',
   "accent_color" text NOT NULL DEFAULT '#5b5bd6',
   "theme" text NOT NULL DEFAULT 'Warm',
+  "deletion_requested_at" timestamp,
   "created_at" timestamp NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS "workspace_owner_idx" ON "workspace" ("owner_id");
@@ -121,6 +123,7 @@ CREATE TABLE IF NOT EXISTS "contract_review" (
   "summary" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "red_flags" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "suggested_edits" jsonb NOT NULL DEFAULT '[]'::jsonb,
+  "followups" jsonb NOT NULL DEFAULT '[]'::jsonb,
   "created_at" timestamp NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS "contract_workspace_idx" ON "contract_review" ("workspace_id");

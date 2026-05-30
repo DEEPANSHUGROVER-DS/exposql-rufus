@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check, Copy, ListChecks, Plus, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Copy, ListChecks, Plus, RotateCcw, Sparkles, Trash2 } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, PageHeader, Panel } from "@/components/app/ui";
+import { OutOfCreditsBanner } from "@/components/app/OutOfCreditsBanner";
 import { rfpQuestionCost } from "@/lib/pricing";
 import { relativeTime } from "@/lib/app/format";
 
@@ -144,6 +145,8 @@ export default function RfpToolPage() {
         subtitle="Paste an RFP or questionnaire. Rufus answers each question from your knowledge base — with a confidence score and source."
       />
 
+      <OutOfCreditsBanner />
+
       {emptyKb && (
         <Panel className="mb-5 border-amber-500/30 !bg-amber-500/[0.06]">
           <p className="text-sm font-medium text-ink-800">Your knowledge base is empty.</p>
@@ -166,17 +169,29 @@ export default function RfpToolPage() {
           </div>
           <div className="space-y-1">
             {recent.map((r) => (
-              <Link
-                key={r.id}
-                href={`/app/rfp/${r.id}`}
-                className="group flex items-center justify-between gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-paper-100"
-              >
-                <span className="truncate text-sm text-ink-700">{r.title}</span>
-                <span className="flex shrink-0 items-center gap-2 text-[11px] text-ink-400">
-                  {relativeTime(+new Date(r.updatedAt))}
-                  <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
-                </span>
-              </Link>
+              <div key={r.id} className="group relative flex items-center">
+                <Link
+                  href={`/app/rfp/${r.id}`}
+                  className="flex flex-1 items-center justify-between gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-paper-100"
+                >
+                  <span className="truncate text-sm text-ink-700">{r.title}</span>
+                  <span className="flex shrink-0 items-center gap-2 text-[11px] text-ink-400">
+                    {relativeTime(+new Date(r.updatedAt))}
+                    <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                  </span>
+                </Link>
+                <button
+                  onClick={async () => {
+                    if (!confirm("Delete this response?")) return;
+                    const res = await fetch(`/api/rfp/${r.id}`, { method: "DELETE" });
+                    if (res.ok) setRecent((curr) => curr.filter((x) => x.id !== r.id));
+                  }}
+                  aria-label="Delete response"
+                  className="ml-2 opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-ink-400 hover:text-rose-600" />
+                </button>
+              </div>
             ))}
           </div>
         </Panel>

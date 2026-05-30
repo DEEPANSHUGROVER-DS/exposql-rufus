@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Check, Copy, Download, FileText, MessageCircle, ShieldAlert, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, Check, Copy, Download, FileText, MessageCircle, ShieldAlert, Sparkles, Trash2, Upload, Wand2 } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, PageHeader, Panel } from "@/components/app/ui";
+import { OutOfCreditsBanner } from "@/components/app/OutOfCreditsBanner";
 import { relativeTime } from "@/lib/app/format";
+import { extractTextFromFile } from "@/lib/extractText";
 import type { RedFlag, SuggestedEdit } from "@/lib/db/schema";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -54,12 +56,38 @@ interface RecentContract { id: string; title: string; createdAt: string }
 export default function ContractToolPage() {
   const { remaining, addRecent, refresh } = useApp();
   const [text, setText] = useState(SAMPLE);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<"idle" | "reviewing" | "done">("idle");
   const [tab, setTab] = useState<Tab>("summary");
   const [copied, setCopied] = useState<number | null>(null);
   const [review, setReview] = useState<ReviewOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<RecentContract[]>([]);
+
+  async function handleFile(file: File | null | undefined) {
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const { text: extracted, fileName: fn } = await extractTextFromFile(file);
+      if (!extracted.trim()) {
+        setError("Couldn't extract any text from that file. It may be a scanned image — paste the text manually.");
+        return;
+      }
+      setText(extracted.slice(0, MAX_CHARS));
+      setFileName(fn);
+      if (extracted.length > MAX_CHARS) {
+        setError(`File was longer than ${MAX_CHARS.toLocaleString()} chars — trimmed. Review section by section for the rest.`);
+      }
+    } catch (e) {
+      setError(String(e instanceof Error ? e.message : e));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   useEffect(() => {
     void fetch("/api/contracts", { cache: "no-store" })
@@ -84,7 +112,7 @@ export default function ContractToolPage() {
       const res = await fetch("/api/ai/contract", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, fileName: fileName || undefined }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -142,6 +170,8 @@ export default function ContractToolPage() {
         subtitle="Paste a contract and Rufus returns a plain-English summary, red flags, and suggested edits. For your review — not legal advice."
       />
 
+      <OutOfCreditsBanner />
+
       {error && (
         <Panel className="mb-5 !bg-rose-500/[0.06]">
           <p className="text-sm text-rose-700">{error}</p>
@@ -156,17 +186,29 @@ export default function ContractToolPage() {
           </div>
           <div className="space-y-1">
             {recent.map((r) => (
-              <Link
-                key={r.id}
-                href={`/app/contracts/${r.id}`}
-                className="group flex items-center justify-between gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-paper-100"
-              >
-                <span className="truncate text-sm text-ink-700">{r.title}</span>
-                <span className="flex shrink-0 items-center gap-2 text-[11px] text-ink-400">
-                  {relativeTime(+new Date(r.createdAt))}
-                  <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
-                </span>
-              </Link>
+              <div key={r.id} className="group relative flex items-center">
+                <Link
+                  href={`/app/contracts/${r.id}`}
+                  className="flex flex-1 items-center justify-between gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-paper-100"
+                >
+                  <span className="truncate text-sm text-ink-700">{r.title}</span>
+                  <span className="flex shrink-0 items-center gap-2 text-[11px] text-ink-400">
+                    {relativeTime(+new Date(r.createdAt))}
+                    <ArrowRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                  </span>
+                </Link>
+                <button
+                  onClick={async () => {
+                    if (!confirm("Delete this review?")) return;
+                    const res = await fetch(`/api/contracts/${r.id}`, { method: "DELETE" });
+                    if (res.ok) setRecent((curr) => curr.filter((x) => x.id !== r.id));
+                  }}
+                  aria-label="Delete review"
+                  className="ml-2 opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-ink-400 hover:text-rose-600" />
+                </button>
+              </div>
             ))}
           </div>
         </Panel>
@@ -174,14 +216,46 @@ export default function ContractToolPage() {
 
       {status !== "done" && (
         <Panel>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+              className="hidden"
+              onChange={(e) => handleFile(e.target.files?.[0])}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading || status === "reviewing"}
+              className="btn-soft py-2 text-[12px] disabled:opacity-50"
+            >
+              <Upload className="h-3.5 w-3.5" /> {uploading ? "Extracting…" : "Upload PDF, DOCX, or TXT"}
+            </button>
+            {fileName && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-ink-900/10 bg-paper-50 px-2.5 py-1 text-[11px] text-ink-600">
+                <FileText className="h-3 w-3" />
+                {fileName}
+                <button
+                  onClick={() => { setFileName(null); setText(SAMPLE); }}
+                  aria-label="Clear file"
+                  className="ml-1 text-ink-400 hover:text-ink-900"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            <span className="ml-auto text-[11px] text-ink-400">
+              {text.length.toLocaleString()} / {MAX_CHARS.toLocaleString()} chars
+            </span>
+          </div>
           <textarea
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => { setText(e.target.value); if (fileName) setFileName(null); }}
             rows={10}
             spellCheck={false}
             disabled={status === "reviewing"}
             className="input resize-none font-mono text-xs leading-relaxed disabled:opacity-60"
-            placeholder="Paste the contract text…"
+            placeholder="Paste the contract text, or upload a PDF/DOCX above…"
           />
           {tooLong && (
             <p className="mt-2 text-xs font-medium text-rose-600">

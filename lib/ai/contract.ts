@@ -106,6 +106,82 @@ Rules:
 
 Return your answer as plain text — no JSON, no markdown fences.`;
 
+/**
+ * Re-run one part of a contract review against a stricter or fresh lens.
+ * Returns only the requested section. Cached against the contract text so
+ * it stays cheap (5-8cr range vs 10-30 for a fresh full review).
+ */
+export type ContractSection = "summary" | "flags" | "edits";
+
+export async function rerunContractSection({
+  contractText,
+  section,
+  instruction,
+}: {
+  contractText: string;
+  section: ContractSection;
+  /** Optional extra instruction — e.g. "rewrite all edits in a stricter tone". */
+  instruction?: string;
+}): Promise<Partial<ContractReviewOutput>> {
+  const sectionSystem: Record<ContractSection, string> = {
+    summary:
+      "Re-summarise the contract in plain English. Return ONLY a JSON object: { \"summary\": [\"...\", \"...\"] }. 3-6 bullets.",
+    flags:
+      "Re-analyse the contract for red flags. Be thorough and rank by severity. Return ONLY a JSON object: { \"redFlags\": [{ \"severity\": \"high|medium|low\", \"clause\": \"<verbatim>\", \"reason\": \"<one sentence>\" }] }.",
+    edits:
+      "Propose concrete edits to the contract. Each edit shows the original phrase, a replacement, and a one-line reason. Return ONLY a JSON object: { \"suggestedEdits\": [{ \"original\": \"...\", \"replacement\": \"...\", \"reason\": \"...\" }] }.",
+  };
+
+  const system = `You are re-analysing a contract that has been provided as context. ${sectionSystem[section]} ${
+    instruction ? `Additional instruction: ${instruction}.` : ""
+  } Never give legal advice. No commentary, no markdown fences.`;
+
+  const resp = await anthropic.messages.create({
+    model: MODEL,
+    max_tokens: 3000,
+    system: [{ type: "text", text: system }],
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: `Contract text:\n----\n${contractText}`, cache_control: { type: "ephemeral" } },
+          { type: "text", text: `Return the JSON object for the "${section}" section.` },
+        ],
+      },
+    ],
+  });
+
+  const raw = parseJsonBlock<Partial<ContractReviewOutput>>(extractText(resp));
+
+  if (section === "summary") {
+    return { summary: Array.isArray(raw.summary) ? raw.summary.filter((s) => typeof s === "string") : [] };
+  }
+  if (section === "flags") {
+    return {
+      redFlags: Array.isArray(raw.redFlags)
+        ? raw.redFlags
+            .filter((f): f is RedFlag => !!f && typeof f === "object")
+            .map((f) => ({
+              severity: (f.severity === "high" || f.severity === "medium" ? f.severity : "low") as RedFlag["severity"],
+              clause: String(f.clause ?? ""),
+              reason: String(f.reason ?? ""),
+            }))
+        : [],
+    };
+  }
+  return {
+    suggestedEdits: Array.isArray(raw.suggestedEdits)
+      ? raw.suggestedEdits
+          .filter((e): e is SuggestedEdit => !!e && typeof e === "object")
+          .map((e) => ({
+            original: String(e.original ?? ""),
+            replacement: String(e.replacement ?? ""),
+            reason: String(e.reason ?? ""),
+          }))
+      : [],
+  };
+}
+
 export async function askContractFollowup({
   contractText,
   question,

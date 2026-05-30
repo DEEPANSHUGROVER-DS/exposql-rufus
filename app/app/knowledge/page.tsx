@@ -122,12 +122,18 @@ export default function KnowledgePage() {
         {editing && (
           <EntryModal
             entry={editing === "new" ? null : editing}
-            onClose={() => setEditing(null)}
-            onSave={(data) => {
-              if (editing === "new") addKnowledge(data);
-              else updateKnowledge(editing.id, data);
+            onSave={async (data) => {
+              if (editing === "new") {
+                const result = await addKnowledge(data);
+                if (!result.ok) return result;
+                setEditing(null);
+                return result;
+              }
+              updateKnowledge(editing.id, data);
               setEditing(null);
+              return { ok: true };
             }}
+            onClose={() => setEditing(null)}
           />
         )}
         {importOpen && (
@@ -174,11 +180,34 @@ function EntryModal({
 }: {
   entry: KnowledgeEntry | null;
   onClose: () => void;
-  onSave: (data: { title: string; body: string; tags: string[] }) => void;
+  onSave: (data: { title: string; body: string; tags: string[] }) => Promise<{ ok: boolean; error?: string }>;
 }) {
   const [title, setTitle] = useState(entry?.title ?? "");
   const [body, setBody] = useState(entry?.body ?? "");
   const [tags, setTags] = useState(entry?.tags.join(", ") ?? "");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    if (!title.trim() || busy) return;
+    setBusy(true);
+    setError(null);
+    const result = await onSave({
+      title: title.trim(),
+      body: body.trim(),
+      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+    });
+    if (!result.ok) {
+      setError(
+        result.error === "free_plan_knowledge_cap"
+          ? "Free plan caps the knowledge base at 3 entries. Upgrade in Settings to add more."
+          : result.error === "unauthenticated"
+          ? "Please sign in again."
+          : `Couldn't save entry${result.error ? `: ${result.error}` : ""}.`,
+      );
+    }
+    setBusy(false);
+  }
 
   return (
     <Backdrop onClose={onClose}>
@@ -206,21 +235,19 @@ function EntryModal({
         <span className="mb-1.5 block text-xs font-medium text-ink-500">Tags (comma separated)</span>
         <input value={tags} onChange={(e) => setTags(e.target.value)} className="input" placeholder="security, compliance" />
       </label>
+      {error && (
+        <p className="mt-4 rounded-xl border border-rose-500/20 bg-rose-500/[0.06] p-3 text-xs text-rose-700">
+          {error}
+        </p>
+      )}
       <div className="mt-6 flex justify-end gap-2">
         <button onClick={onClose} className="btn-soft py-2.5 text-[13px]">Cancel</button>
         <button
-          onClick={() =>
-            title.trim() &&
-            onSave({
-              title: title.trim(),
-              body: body.trim(),
-              tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-            })
-          }
-          disabled={!title.trim()}
+          onClick={submit}
+          disabled={!title.trim() || busy}
           className="btn-dark py-2.5 text-[13px] disabled:opacity-50"
         >
-          Save entry
+          {busy ? "Saving…" : "Save entry"}
         </button>
       </div>
     </Backdrop>

@@ -155,4 +155,9 @@ ALTER TABLE "proposal" ADD COLUMN IF NOT EXISTS "scope" text NOT NULL DEFAULT ''
 ALTER TABLE "proposal" ADD COLUMN IF NOT EXISTS "timeline" text NOT NULL DEFAULT '';
 ALTER TABLE "proposal" ADD COLUMN IF NOT EXISTS "tone" text NOT NULL DEFAULT 'Friendly';
 ALTER TABLE "contract_review" ADD COLUMN IF NOT EXISTS "source_text" text NOT NULL DEFAULT '';
+
+-- Migration 002: contract follow-ups persistence + account deletion + Vercel Blob logo
+ALTER TABLE "contract_review" ADD COLUMN IF NOT EXISTS "followups" jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE "workspace" ADD COLUMN IF NOT EXISTS "deletion_requested_at" timestamp;
+ALTER TABLE "workspace" ADD COLUMN IF NOT EXISTS "logo_blob_url" text;
 `.trim();

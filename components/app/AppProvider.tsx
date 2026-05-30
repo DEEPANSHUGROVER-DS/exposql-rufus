@@ -46,7 +46,7 @@ interface AppContextValue extends AppState {
   spend: (amount: number, reason: string) => boolean;
   setProfile: (patch: Partial<WorkspaceProfile>) => void;
   completeOnboarding: () => void;
-  addKnowledge: (e: Omit<KnowledgeEntry, "id" | "updatedAt">) => void;
+  addKnowledge: (e: Omit<KnowledgeEntry, "id" | "updatedAt">) => Promise<{ ok: boolean; error?: string }>;
   updateKnowledge: (id: string, patch: Partial<Omit<KnowledgeEntry, "id">>) => void;
   removeKnowledge: (id: string) => void;
   addRecent: (item: Omit<RecentItem, "id" | "updatedAt">) => void;
@@ -208,33 +208,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const addKnowledge: AppContextValue["addKnowledge"] = (e) => {
+  const addKnowledge: AppContextValue["addKnowledge"] = async (e) => {
     const tempId = uid();
     setState((s) => ({
       ...s,
       knowledge: [{ ...e, id: tempId, updatedAt: Date.now() }, ...s.knowledge],
     }));
-    void fetch("/api/knowledge", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(e),
-    })
-      .then(async (res) => {
-        if (res.ok) {
-          const { entry } = await res.json();
-          setState((s) => ({
-            ...s,
-            knowledge: s.knowledge.map((k) =>
-              k.id === tempId ? { ...k, id: entry.id, updatedAt: +new Date(entry.updatedAt) } : k,
-            ),
-          }));
-        } else {
-          setState((s) => ({ ...s, knowledge: s.knowledge.filter((k) => k.id !== tempId) }));
-        }
-      })
-      .catch(() => {
-        /* leave optimistic; refresh will reconcile */
+    try {
+      const res = await fetch("/api/knowledge", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(e),
       });
+      if (res.ok) {
+        const { entry } = await res.json();
+        setState((s) => ({
+          ...s,
+          knowledge: s.knowledge.map((k) =>
+            k.id === tempId ? { ...k, id: entry.id, updatedAt: +new Date(entry.updatedAt) } : k,
+          ),
+        }));
+        return { ok: true };
+      }
+      const data: { error?: string; cap?: number } = await res.json().catch(() => ({}));
+      setState((s) => ({ ...s, knowledge: s.knowledge.filter((k) => k.id !== tempId) }));
+      return { ok: false, error: data?.error ?? `failed_${res.status}` };
+    } catch (err) {
+      setState((s) => ({ ...s, knowledge: s.knowledge.filter((k) => k.id !== tempId) }));
+      return { ok: false, error: String(err) };
+    }
   };
 
   const updateKnowledge: AppContextValue["updateKnowledge"] = (id, patch) => {

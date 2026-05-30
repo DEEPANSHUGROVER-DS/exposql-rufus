@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { CostBadge, PageHeader, Panel } from "@/components/app/ui";
+import { OutOfCreditsBanner } from "@/components/app/OutOfCreditsBanner";
 import { PricingEditor } from "@/components/app/PricingEditor";
 import type { Tone } from "@/lib/app/types";
 import type { PricingRow } from "@/lib/db/schema";
@@ -72,6 +73,8 @@ export default function NewProposalPage() {
       </Link>
 
       <PageHeader title="New proposal" subtitle="Fill the essentials — Rufus drafts the full sectioned proposal." />
+
+      <OutOfCreditsBanner />
 
       {error && (
         <Panel className="mb-5 !bg-rose-500/[0.06]">

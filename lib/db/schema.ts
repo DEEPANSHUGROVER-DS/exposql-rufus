@@ -82,9 +82,13 @@ export const workspaces = pgTable("workspace", {
 
   // brand kit
   logoUrl: text("logo_url").notNull().default(""),
+  logoBlobUrl: text("logo_blob_url"),
   primaryColor: text("primary_color").notNull().default("#1B1A16"),
   accentColor: text("accent_color").notNull().default("#5b5bd6"),
   theme: text("theme").notNull().default("Warm"),
+
+  // self-serve account closure
+  deletionRequestedAt: timestamp("deletion_requested_at"),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -146,6 +150,8 @@ export const rfpResponses = pgTable("rfp_response", {
 export type RedFlag = { severity: "high" | "medium" | "low"; clause: string; reason: string };
 export type SuggestedEdit = { original: string; replacement: string; reason: string };
 
+export type ContractFollowup = { question: string; answer: string; credits: number; createdAt: number };
+
 export const contractReviews = pgTable("contract_review", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   workspaceId: text("workspace_id")
@@ -157,6 +163,7 @@ export const contractReviews = pgTable("contract_review", {
   summary: jsonb("summary").$type<string[]>().notNull().default([]),
   redFlags: jsonb("red_flags").$type<RedFlag[]>().notNull().default([]),
   suggestedEdits: jsonb("suggested_edits").$type<SuggestedEdit[]>().notNull().default([]),
+  followups: jsonb("followups").$type<ContractFollowup[]>().notNull().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
