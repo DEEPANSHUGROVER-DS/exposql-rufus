@@ -19,6 +19,7 @@ import {
 import { signOut } from "next-auth/react";
 import { Logo } from "@/components/Logo";
 import { useApp } from "./AppProvider";
+import { SearchPalette } from "./SearchPalette";
 
 const nav = [
   { label: "Dashboard", href: "/app", icon: LayoutDashboard },
@@ -78,8 +79,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Onboarding renders full-bleed, without the shell chrome.
   if (onOnboarding) return <>{children}</>;
 
+  const brandStyle = {
+    ["--brand-primary" as string]: profile.primaryColor || "#1B1A16",
+    ["--brand-accent" as string]: profile.accentColor || "#5b5bd6",
+  } as React.CSSProperties;
+
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen" style={brandStyle}>
       {/* sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-64 transform border-r border-ink-900/[0.07] bg-paper-50/80 backdrop-blur-xl transition-transform duration-300 lg:translate-x-0 ${
@@ -153,6 +159,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {displayName} · <span className="capitalize text-ink-400">{plan} plan</span>
           </div>
           <div className="flex items-center gap-3">
+            <SearchPalette />
             <Link href="/app/settings" className="text-xs font-semibold text-ink-500 hover:text-ink-900">
               {remaining.toLocaleString()} credits
             </Link>

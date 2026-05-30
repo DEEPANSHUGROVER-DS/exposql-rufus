@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Trash2, Upload } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { PageHeader, Panel } from "@/components/app/ui";
 import { relativeTime } from "@/lib/app/format";
@@ -8,6 +9,103 @@ import { creditPacks, plans } from "@/lib/pricing";
 
 const themes = ["Light", "Warm", "Bold"] as const;
 const swatches = ["#1B1A16", "#5b5bd6", "#0f766e", "#b91c1c", "#9333ea", "#2563eb"];
+
+function LogoPanel() {
+  const { profile, setProfile, refresh } = useApp();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/workspace/logo", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.message || data?.error || `Upload failed (${res.status})`);
+        return;
+      }
+      // refresh workspace state so the new logoUrl reflects
+      await refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  async function clearLogo() {
+    setBusy(true);
+    setError(null);
+    try {
+      await fetch("/api/workspace/logo", { method: "DELETE" });
+      setProfile({ logoUrl: "" });
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Panel>
+      <h3 className="text-sm font-semibold text-ink-900">Logo</h3>
+      <p className="mt-1 text-xs text-ink-500">
+        Upload a PNG, JPG, SVG, or WebP (max 1.5 MB). Or paste a URL if you already host it.
+      </p>
+      <div className="mt-3 flex items-center gap-4">
+        <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-2xl border border-ink-900/10 bg-paper-100 text-xs text-ink-400">
+          {profile.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={profile.logoUrl} alt="Logo preview" className="h-full w-full object-contain" />
+          ) : (
+            "Logo"
+          )}
+        </div>
+        <div className="flex-1 space-y-2">
+          <input
+            value={profile.logoUrl}
+            onChange={(e) => setProfile({ logoUrl: e.target.value })}
+            placeholder="https://…/logo.png"
+            className="input"
+          />
+          <div className="flex flex-wrap gap-2">
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".png,.jpg,.jpeg,.svg,.webp,image/png,image/jpeg,image/svg+xml,image/webp"
+              className="hidden"
+              onChange={(e) => handleFile(e.target.files?.[0])}
+            />
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={busy}
+              className="btn-soft py-2 text-[12px] disabled:opacity-50"
+            >
+              <Upload className="h-3.5 w-3.5" /> {busy ? "Uploading…" : "Upload file"}
+            </button>
+            {profile.logoUrl && (
+              <button
+                type="button"
+                onClick={clearLogo}
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 rounded-full border border-ink-900/10 px-3 py-2 text-[12px] font-semibold text-ink-600 hover:text-rose-600 disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Remove
+              </button>
+            )}
+          </div>
+          {error && <p className="text-xs text-rose-600">{error}</p>}
+        </div>
+      </div>
+    </Panel>
+  );
+}
 
 export default function SettingsPage() {
   const { profile, setProfile, plan, creditsIncluded, creditsUsed, remaining, ledger } = useApp();
@@ -59,26 +157,8 @@ export default function SettingsPage() {
 
       {tab === "brand" ? (
         <div className="space-y-4">
-          <Panel>
-            <h3 className="text-sm font-semibold text-ink-900">Logo</h3>
-            <p className="mt-1 text-xs text-ink-500">Paste a logo URL (file upload connects with the backend later).</p>
-            <div className="mt-3 flex items-center gap-4">
-              <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-2xl border border-ink-900/10 bg-paper-100 text-xs text-ink-400">
-                {profile.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={profile.logoUrl} alt="Logo preview" className="h-full w-full object-contain" />
-                ) : (
-                  "Logo"
-                )}
-              </div>
-              <input
-                value={profile.logoUrl}
-                onChange={(e) => setProfile({ logoUrl: e.target.value })}
-                placeholder="https://…/logo.png"
-                className="input flex-1"
-              />
-            </div>
-          </Panel>
+          <LogoPanel />
+
 
           <Panel>
             <h3 className="text-sm font-semibold text-ink-900">Colors</h3>
@@ -150,6 +230,38 @@ export default function SettingsPage() {
                 className="h-full rounded-full bg-ink-900"
                 style={{ width: `${creditsIncluded ? Math.max(2, (remaining / creditsIncluded) * 100) : 0}%` }}
               />
+            </div>
+          </Panel>
+
+          <Panel>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-ink-900">Manage subscription</h3>
+                <p className="mt-1 text-xs text-ink-500">Cancel, change card, download invoices — handled by Stripe&apos;s billing portal.</p>
+              </div>
+              <button
+                onClick={async () => {
+                  setBusy("portal");
+                  setError(null);
+                  try {
+                    const res = await fetch("/api/stripe/portal", { method: "POST" });
+                    const data = await res.json();
+                    if (res.ok && data.url) {
+                      window.location.href = data.url;
+                      return;
+                    }
+                    setError(data?.message || data?.error || "Could not open the portal.");
+                  } catch (e) {
+                    setError(String(e));
+                  } finally {
+                    setBusy(null);
+                  }
+                }}
+                disabled={busy === "portal"}
+                className="btn-soft py-2 text-[12px] disabled:opacity-50"
+              >
+                {busy === "portal" ? "Opening…" : "Open billing portal"}
+              </button>
             </div>
           </Panel>
 
@@ -229,8 +341,89 @@ export default function SettingsPage() {
               )}
             </div>
           </Panel>
+
+          <DataAndAccountPanel />
         </div>
       )}
     </div>
+  );
+}
+
+function DataAndAccountPanel() {
+  const { profile } = useApp();
+  const [deleting, setDeleting] = useState(false);
+  const [confirm, setConfirm] = useState("");
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function destroy() {
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ confirmEmail: confirm }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(
+          data?.error === "confirmation_mismatch"
+            ? "The email you typed doesn't match your account."
+            : data?.error || `Failed (${res.status})`,
+        );
+        setDeleting(false);
+        return;
+      }
+      // Sign out and redirect home
+      window.location.href = "/";
+    } catch (e) {
+      setError(String(e));
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <Panel>
+      <h3 className="text-sm font-semibold text-ink-900">Your data</h3>
+      <p className="mt-1 text-xs text-ink-500">
+        Download everything Rufus stores about your workspace, or delete the account permanently.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <a href="/api/account/export" className="btn-soft py-2 text-[12px]">
+          Download my data
+        </a>
+        <button onClick={() => setShowConfirm((v) => !v)} className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 px-3 py-2 text-[12px] font-semibold text-rose-700 hover:bg-rose-500/[0.06]">
+          Delete account
+        </button>
+      </div>
+
+      {showConfirm && (
+        <div className="mt-5 rounded-2xl border border-rose-500/30 bg-rose-500/[0.04] p-4">
+          <p className="text-sm font-medium text-rose-700">This permanently deletes your account.</p>
+          <p className="mt-1 text-xs text-ink-600">
+            Your workspace, knowledge base, proposals, RFP responses, and contract reviews will be wiped from
+            our active systems. Billing records may be retained as required by tax law. Type{" "}
+            <strong>{profile.companyName ? "" : ""}your email below</strong> to confirm.
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Type your sign-in email to confirm"
+              className="input flex-1 text-sm"
+            />
+            <button
+              onClick={destroy}
+              disabled={!confirm.trim() || deleting}
+              className="inline-flex items-center justify-center rounded-full bg-rose-600 px-4 py-2.5 text-[12px] font-semibold text-white shadow-pill transition-colors hover:bg-rose-700 disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : "Delete forever"}
+            </button>
+          </div>
+          {error && <p className="mt-2 text-xs text-rose-700">{error}</p>}
+        </div>
+      )}
+    </Panel>
   );
 }

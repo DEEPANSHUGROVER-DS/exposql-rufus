@@ -48,16 +48,44 @@ export default async function HostedProposalPage({ params }: { params: Promise<{
 
   const primary = workspace?.primaryColor || "#1B1A16";
   const accent = workspace?.accentColor || "#5b5bd6";
+  const theme = (workspace?.theme as "Light" | "Warm" | "Bold") || "Warm";
+
+  // Theme variants — the workspace's brand colours stay the same, but the
+  // background, header treatment and accent prominence differ.
+  const themeStyles = {
+    Light: { surface: "bg-white text-ink-900", header: "border-b border-ink-900/[0.07]", titleSize: "sm:text-5xl" },
+    Warm: { surface: "bg-paper text-ink-900", header: "border-b border-ink-900/[0.07]", titleSize: "sm:text-5xl" },
+    Bold: {
+      surface: "bg-ink-900 text-paper-50",
+      header: "border-b border-paper-50/10",
+      titleSize: "sm:text-[3.5rem]",
+    },
+  } as const;
+  const t = themeStyles[theme] ?? themeStyles.Warm;
+  const isDark = theme === "Bold";
+
+  const tx = {
+    heading: isDark ? "text-paper-50" : "text-ink-900",
+    body: isDark ? "text-paper-200/85" : "text-ink-700",
+    muted: isDark ? "text-paper-200/55" : "text-ink-500",
+    dim: isDark ? "text-paper-200/40" : "text-ink-400",
+    border: isDark ? "border-paper-50/10" : "border-ink-900/[0.07]",
+    tableHead: isDark ? "bg-paper-50/[0.06] text-paper-200/55" : "bg-paper-100 text-ink-500",
+    rowBg: isDark ? "bg-paper-50/[0.03]" : "bg-white",
+    rowText: isDark ? "text-paper-200" : "text-ink-700",
+    rowTextMuted: isDark ? "text-paper-200/55" : "text-ink-500",
+    rowAmount: isDark ? "text-paper-50" : "text-ink-900",
+  };
 
   return (
     <div
-      className="min-h-screen bg-paper text-ink-900"
+      className={`min-h-screen ${t.surface}`}
       style={{ ["--brand-primary" as string]: primary, ["--brand-accent" as string]: accent } as React.CSSProperties}
     >
       <TrackView slug={slug} alreadyViewed={Boolean(proposal.viewedAt)} />
 
       {/* Brand header */}
-      <header className="border-b border-ink-900/[0.07]">
+      <header className={`border-b ${tx.border}`}>
         <div className="container-x flex items-center justify-between py-6">
           <div className="flex items-center gap-3">
             {workspace?.logoUrl ? (
@@ -72,25 +100,25 @@ export default async function HostedProposalPage({ params }: { params: Promise<{
               </span>
             )}
             <div>
-              <p className="text-sm font-semibold text-ink-900">{workspace?.companyName ?? "Proposal"}</p>
-              <p className="text-[11px] text-ink-400">Proposal · {new Date(proposal.createdAt).toLocaleDateString()}</p>
+              <p className={`text-sm font-semibold ${tx.heading}`}>{workspace?.companyName ?? "Proposal"}</p>
+              <p className={`text-[11px] ${tx.dim}`}>Proposal · {new Date(proposal.createdAt).toLocaleDateString()}</p>
             </div>
           </div>
-          <span className="text-[11px] uppercase tracking-widest text-ink-400">{proposal.status}</span>
+          <span className={`text-[11px] uppercase tracking-widest ${tx.dim}`}>{proposal.status}</span>
         </div>
       </header>
 
       <main className="container-x py-16 sm:py-24">
         <div className="mx-auto max-w-2xl">
-          <p className="text-xs font-medium text-ink-400">Prepared for {proposal.clientName}</p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-[-0.02em] sm:text-5xl">{proposal.title}</h1>
+          <p className={`text-xs font-medium ${tx.dim}`}>Prepared for {proposal.clientName}</p>
+          <h1 className={`mt-2 text-4xl font-semibold tracking-[-0.02em] ${t.titleSize} ${tx.heading}`}>{proposal.title}</h1>
           <div className="mt-3 h-1 w-12 rounded-full" style={{ backgroundColor: accent }} />
 
           <div className="mt-12 space-y-10">
             {SECTION_KEYS.filter((k) => k !== "Terms" && k !== "Next steps").map((key) => (
               <section key={key}>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-400">{key}</h2>
-                <div className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed text-ink-700">
+                <h2 className={`text-sm font-semibold uppercase tracking-[0.18em] ${tx.dim}`}>{key}</h2>
+                <div className={`mt-3 whitespace-pre-wrap text-[15px] leading-relaxed ${tx.body}`}>
                   {sections[key] || "(empty)"}
                 </div>
               </section>
@@ -98,10 +126,10 @@ export default async function HostedProposalPage({ params }: { params: Promise<{
 
             {/* Pricing */}
             <section>
-              <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-400">Pricing</h2>
-              <div className="mt-3 overflow-hidden rounded-2xl border border-ink-900/[0.07]">
+              <h2 className={`text-sm font-semibold uppercase tracking-[0.18em] ${tx.dim}`}>Pricing</h2>
+              <div className={`mt-3 overflow-hidden rounded-2xl border ${tx.border}`}>
                 <table className="w-full text-sm">
-                  <thead className="bg-paper-100 text-left text-xs uppercase tracking-wider text-ink-500">
+                  <thead className={`text-left text-xs uppercase tracking-wider ${tx.tableHead}`}>
                     <tr>
                       <th className="px-4 py-3">Item</th>
                       <th className="px-4 py-3 text-center">Qty</th>
@@ -109,13 +137,13 @@ export default async function HostedProposalPage({ params }: { params: Promise<{
                       <th className="px-4 py-3 text-right">Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-ink-900/[0.06]">
+                  <tbody className={`divide-y ${isDark ? "divide-paper-50/10" : "divide-ink-900/[0.06]"}`}>
                     {pricing.map((r) => (
-                      <tr key={r.id} className="bg-white">
-                        <td className="px-4 py-3 text-ink-700">{r.item}</td>
-                        <td className="px-4 py-3 text-center text-ink-500">{r.qty}</td>
-                        <td className="px-4 py-3 text-right text-ink-700">{fmt(r.price)}</td>
-                        <td className="px-4 py-3 text-right font-medium text-ink-900">{fmt(r.qty * r.price)}</td>
+                      <tr key={r.id} className={tx.rowBg}>
+                        <td className={`px-4 py-3 ${tx.rowText}`}>{r.item}</td>
+                        <td className={`px-4 py-3 text-center ${tx.rowTextMuted}`}>{r.qty}</td>
+                        <td className={`px-4 py-3 text-right ${tx.rowText}`}>{fmt(r.price)}</td>
+                        <td className={`px-4 py-3 text-right font-medium ${tx.rowAmount}`}>{fmt(r.qty * r.price)}</td>
                       </tr>
                     ))}
                     <tr style={{ backgroundColor: primary, color: "#FBF9F4" }}>
@@ -129,26 +157,26 @@ export default async function HostedProposalPage({ params }: { params: Promise<{
 
             {(["Terms", "Next steps"] as const).map((key) => (
               <section key={key}>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-ink-400">{key}</h2>
-                <div className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed text-ink-700">
+                <h2 className={`text-sm font-semibold uppercase tracking-[0.18em] ${tx.dim}`}>{key}</h2>
+                <div className={`mt-3 whitespace-pre-wrap text-[15px] leading-relaxed ${tx.body}`}>
                   {sections[key] || "(empty)"}
                 </div>
               </section>
             ))}
           </div>
 
-          <div className="mt-16 border-t border-ink-900/[0.07] pt-8 text-center">
-            <p className="text-xs text-ink-400">
+          <div className={`mt-16 border-t pt-8 text-center ${tx.border}`}>
+            <p className={`text-xs ${tx.dim}`}>
               Reach out to {workspace?.companyName ?? "us"} to approve or discuss.
             </p>
           </div>
         </div>
       </main>
 
-      <footer className="border-t border-ink-900/[0.07] py-6">
-        <div className="container-x text-center text-[11px] text-ink-400">
+      <footer className={`border-t ${tx.border} py-6`}>
+        <div className={`container-x text-center text-[11px] ${tx.dim}`}>
           Powered by{" "}
-          <a href="https://rufus.exposql.com" target="_blank" rel="noopener noreferrer" className="hover:text-ink-900">
+          <a href="https://rufus.exposql.com" target="_blank" rel="noopener noreferrer" className={isDark ? "hover:text-paper-50" : "hover:text-ink-900"}>
             Rufus
           </a>
         </div>

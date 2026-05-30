@@ -2,6 +2,7 @@ import { eq, desc } from "drizzle-orm";
 import { db } from "./index";
 import { users, workspaces, knowledgeEntries, creditLedger, proposals, rfpResponses, contractReviews } from "./schema";
 import type { WorkspaceRow } from "./schema";
+import { sendWelcomeEmail } from "@/lib/email";
 
 /**
  * Upsert the user by email, then ensure they own a workspace. Resolving by
@@ -44,6 +45,8 @@ export async function ensureUserAndWorkspace(profile: {
       reason: "Free plan starting credits",
       source: "grant",
     });
+    // Welcome email — no-op when RESEND_API_KEY isn't set
+    void sendWelcomeEmail(user.email, user.name).catch(() => {});
   }
 
   return { userId: user.id, workspace };

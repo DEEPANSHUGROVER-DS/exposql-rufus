@@ -130,9 +130,14 @@ export default function ContractViewPage() {
         title={row.title}
         subtitle="For your review — not legal advice."
         action={
-          <button onClick={() => {}} className="btn-soft py-2 text-[12px]">
+          <a
+            href={`/api/contracts/${id}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-soft py-2 text-[12px]"
+          >
             <Download className="h-3.5 w-3.5" /> Export PDF
-          </button>
+          </a>
         }
       />
 

@@ -116,6 +116,13 @@ export default function AdminPage() {
           </span>
         }
         subtitle="Workspace, credit, and revenue overview. Visible only to emails listed in ADMIN_EMAILS."
+        action={
+          <div className="flex flex-wrap gap-2">
+            <a href="/api/admin/export?kind=users" className="btn-soft py-2 text-[12px]">Users CSV</a>
+            <a href="/api/admin/export?kind=purchases" className="btn-soft py-2 text-[12px]">Purchases CSV</a>
+            <a href="/api/admin/export?kind=ledger" className="btn-soft py-2 text-[12px]">Ledger CSV</a>
+          </div>
+        }
       />
 
       {error && (

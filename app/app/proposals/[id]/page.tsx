@@ -222,9 +222,14 @@ export default function ProposalEditorPage() {
               <option value="won">Won</option>
               <option value="lost">Lost</option>
             </select>
-            <button onClick={() => flash("PDF export coming soon")} className="btn-soft py-2 text-[12px]">
+            <a
+              href={`/api/proposals/${id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-soft py-2 text-[12px]"
+            >
               <Download className="h-3.5 w-3.5" /> PDF
-            </button>
+            </a>
             <button onClick={publish} disabled={publishing} className="btn-dark py-2 text-[12px] disabled:opacity-50">
               <Link2 className="h-3.5 w-3.5" /> {publishing ? "Publishing…" : proposal.hostedSlug ? "Re-publish" : "Publish"}
             </button>
