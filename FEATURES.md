@@ -392,7 +392,7 @@ The model is fully implemented; numbers all live in `lib/pricing.ts`.
 | Ask a follow-up on a contract | 3–5 (by length) |
 | Re-run a contract section | 5–8 (listed in pricing, not wired in UI) |
 | AI knowledge import | 2 per detected entry |
-| Editor side-panel assistant | 2–4 (listed, ❌ not implemented) |
+| ~~Editor side-panel assistant~~ | Removed from the roadmap — see "Deliberately NOT building" below |
 | Inline AI edit | 1 (listed, ❌ not implemented) |
 
 ### Atomic spend pattern (`lib/db/queries.spendCredits`)
@@ -539,21 +539,24 @@ Env when added: `NEXT_PUBLIC_GTM_ID`, `NEXT_PUBLIC_GA4_ID`.
 
 ## 18. Pending features queue
 
-Priority order if/when we pick this back up:
+Most original queue items have shipped. What remains:
 
-1. **Cancel-subscription / Customer Portal** — *explicit defer per user, listed here for completeness.*
-2. **PDF + DOCX upload** for contract review.
-3. **PDF export** for proposals (and contract reviews).
-4. **Tiptap rich-text editor** for proposal sections.
-5. **Logo upload via Vercel Blob.**
-6. **Brand colours applied to the in-app editor preview** (currently only hosted page).
-7. **Free-plan KB cap UX** on the regular add modal (the import modal is already correct).
-8. **Inline AI edit endpoint** (`/api/ai/edit`) + selection-aware UI in the proposal editor.
-9. **Editor side-panel assistant** (the 2–4cr action listed in pricing).
-10. **Email notifications** (Resend).
-11. **GA4 + GTM analytics.**
-12. **Admin: CSV export, drill into individual workspace items.**
-13. **Contract follow-ups persisted** (currently per-session).
-14. **Long-doc contract splitter** (currently capped at 60k chars).
-15. **Annual plans** (currently monthly recurring only).
-16. **E-sign capture** on the public proposal page (or integrate a signing provider).
+### Active polish (will build when we get to them)
+1. **Long-doc contract splitter** — currently capped at 60k chars with a warning.
+2. **Inline AI edit UI** — endpoint at `/api/ai/edit` is live (1 cr, rewrite/shorten/lengthen/formal/friendly/concise). Held because a floating selection menu on plain textareas is awkward UX.
+3. **Admin: drill into a workspace's individual proposals / RFPs / contracts** (counts only today).
+4. **Brand colours applied across the in-app editor preview.** CSS variables already exposed; specific surfaces need to opt in.
+
+### Wired and ready, just needs the env var
+- **Email notifications** — set `RESEND_API_KEY` + `EMAIL_FROM`.
+- **Logo upload to Vercel Blob** — set `BLOB_READ_WRITE_TOKEN`.
+- **Analytics** — set `NEXT_PUBLIC_GA4_ID` and/or `NEXT_PUBLIC_GTM_ID`.
+
+### Deliberately NOT building (product decisions, not deferrals)
+
+- ❌ **Rich-text editor (Tiptap or similar).** Plain textareas are the design. Bold/italic doesn't justify the HTML sanitisation pipeline + PDF re-rendering complexity. If a customer ever asks for emphasis, we'd parse markdown-style `**bold**` on the hosted page only (~30 lines).
+- ❌ **E-sign capture.** Rufus creates proposals; clients sign on their side via the downloaded PDF (Adobe Acrobat / DocuSign / sign-in-person). Not our problem to solve.
+- ❌ **Annual plans.** Monthly only. Annual creates refund + proration complexity around credit allowances and removes the optionality to pivot or sunset.
+- ❌ **Teammate invites / multi-user workspaces / SSO / enterprise tier.** Single-user only at every plan. Customers needing multi-user run separate accounts. Keeps the credit model clean.
+- ❌ **DOCX export.** Removed from the Starter feature list — only PDF export ships.
+- ❌ **Editor side-panel assistant.** Removed from the pricing model. Was always speculative and depended on a richer editor; with the rich editor not on the roadmap, this is off too.

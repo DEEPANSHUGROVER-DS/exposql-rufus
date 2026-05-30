@@ -111,25 +111,22 @@ extended with a monthly/yearly toggle.
 
 ## 5. Pending features queue
 
-In priority order if/when we pick this back up.
-
-### Still pending
-1. **Tiptap rich-text editor** for proposal sections. Deferred this sprint because shipping it safely requires a HTML-sanitisation pipeline (DOMPurify + jsdom or sanitize-html on server-side, paired with `dangerouslySetInnerHTML` on the hosted page). Worth doing but not a one-line change.
-2. **E-sign capture** on the `/p/<slug>` page. Two paths:
-   - **Lightweight** — type-your-name signature + timestamp + IP, stored in the DB. Has no legal weight as a formal e-signature.
-   - **Real** — DocuSign / HelloSign integration. Takes a few days, per-signature cost.
-3. **Annual Stripe plans.** Needs new prices created in Stripe Dashboard (the MCP client we used to create the monthly products has disconnected). Add a monthly/yearly toggle on the pricing page once IDs are in `lib/stripe.ts`.
-4. **Teammate invites.** Big — needs a `workspace_member` table, an invitation flow, role-based permissions, and ownership-by-email scoping everywhere becomes membership-by-userId. Worth deciding the permissions model before building.
-5. **Long-doc contract splitter** — currently capped at 60k chars with a warning. A real section-by-section flow would re-run the review per chunk and merge results.
-6. **Inline AI edit UI integration** — the `/api/ai/edit` endpoint is live (1 credit, rewrite/shorten/lengthen/formal/friendly/concise). A floating menu on text-selection in the proposal editor would expose it; held until Tiptap lands so we have a stable editor target.
-7. **Editor side-panel assistant** — chat with the document. Same constraint as #6.
-8. **Per-workspace drill into items** in admin — currently shows counts, not item lists.
-9. **Brand colours applied across the in-app editor preview.** CSS variables `--brand-primary` and `--brand-accent` are now on the AppShell root; specific surfaces (badges, regen buttons, headers) can opt in by reading them. Default Tailwind `text-accent` still wins everywhere else.
-
 ### Wired and ready, just needs the env var
 - **Email notifications** — set `RESEND_API_KEY` + `EMAIL_FROM`.
 - **Logo upload to Vercel Blob** — set `BLOB_READ_WRITE_TOKEN`.
 - **Analytics** — set `NEXT_PUBLIC_GA4_ID` and/or `NEXT_PUBLIC_GTM_ID`.
+
+### Optional polish (no decision blocking)
+1. **Long-doc contract splitter** — currently capped at 60k chars with a warning. A real section-by-section flow would re-run the review per chunk and merge results.
+2. **Inline AI edit UI integration** — the `/api/ai/edit` endpoint is live (1 credit). A floating menu on text-selection in the proposal editor would expose it. Held because the proposal editor uses plain textareas, where selection-menu UX is awkward; the API is there if/when an editor refactor happens.
+3. **Per-workspace drill into items** in admin — admin currently shows counts, not item lists.
+4. **Brand colours applied across the in-app editor preview.** CSS variables `--brand-primary` and `--brand-accent` are exposed on the AppShell root; specific surfaces can opt in by reading them. The default Tailwind `text-accent` still wins everywhere else.
+
+### Deliberately not building (decisions captured in §7)
+- ❌ **Rich-text editor (Tiptap).** Plain textareas are sufficient. Bold/italic isn't worth the HTML sanitisation pipeline.
+- ❌ **E-sign capture** on hosted proposals. Clients can download the PDF and sign with Adobe / DocuSign on their side. We create proposals, we don't offer signing.
+- ❌ **Annual plans.** Monthly only. Annual locks us in to refund/proration complexity and removes optionality to pivot/sunset.
+- ❌ **Teammate invites / multi-user workspaces / SSO / enterprise tier.** Single-user only at every plan. Customers who need multi-user workflows run separate accounts.
 
 ---
 
@@ -153,11 +150,14 @@ In priority order if/when we pick this back up.
 - **Free plan deliberately tightened** to "one task only" (one proposal *or* one contract review), 20 credits, watermarked, KB cap 3.
 - **RFP answer cost is 2–4 per question** (not flat 1) because the work involves recall + analysis + tone-matching.
 - **Reruns are not free.** Section regen, contract follow-ups, RFP re-answers all cost.
-- **Stripe management *partially* lifted** — Customer Portal is now wired. Manual cancel/invoice handling is gone. Annual plans still pending Stripe-dashboard config.
+- **Stripe management partially lifted** — Customer Portal is wired (Settings → Open billing portal). Manual cancel/invoice handling is gone.
 - **`ADMIN_EMAILS` is comma-separated** so adding a co-admin doesn't need a redeploy.
 - **`AUTH_SECRET` vs `SETUP_TOKEN`** are different secrets, don't reuse.
 - **Brand colours fully apply on hosted `/p/<slug>`** including theme variants. In-app preview is opt-in via the CSS variables now exposed.
-- **Tiptap was deferred** this sprint — HTML sanitisation pipeline needs deliberate design work. Plain textareas remain in the proposal editor.
+- **Rich-text editor (Tiptap) explicitly NOT pursued.** Plain textareas are the design. Bold/italic doesn't justify the HTML-sanitisation pipeline + PDF re-rendering complexity. If a customer ever asks for emphasis, the cheapest add is markdown-style `**bold**` parsing on the hosted page only (~30 lines, no library needed) — not Tiptap.
+- **E-sign capture explicitly NOT in scope.** Rufus creates proposals; clients sign on their side (download the PDF, use Adobe / DocuSign / sign-in-person). Not a Rufus problem.
+- **No annual plans, ever.** Monthly only. Annual locks us into refund/proration complexity around credit allowances and removes the optionality to pivot or sunset the product cleanly.
+- **No teammate / multi-user / enterprise functionality at any plan.** Single-user only. Customers needing multi-user run separate accounts. This keeps the credit model clean and avoids RBAC/SSO drift.
 
 ---
 

@@ -46,7 +46,7 @@ the workspace profile, knowledge base, brand kit, and credit balance.
 User fills a short form (client, project title, scope, editable pricing
 table, timeline, tone). Rufus drafts a **sectioned proposal** in the
 workspace's tone, applies the brand kit live, and produces an
-**e-sign-ready** output. The user can edit any section manually, regenerate
+**ready-to-send PDF** output. The user can edit any section manually, regenerate
 one section at a time, change pricing line items, mark status
 (draft/sent/won/lost), and **publish a hosted public URL** the client can
 open without an account. Rufus tracks **when the client first opens it**.

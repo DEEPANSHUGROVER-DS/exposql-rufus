@@ -44,7 +44,6 @@ absorbing the free tier, regenerations, Stripe fees (~2.9% + $0.30), and infra.
 | Ask a follow-up on a contract | 3–5 | $0.30–0.50 | ~$0.02 | ~94% |
 | Re-run a contract section | 5–8 | $0.50–0.80 | ~$0.05 | ~90% |
 | AI import to knowledge base | 2 / entry | $0.20 | ~$0.01 | ~95% |
-| Editor assistant (side panel) | 2–4 | $0.20–0.40 | ~$0.01 | ~95% |
 | Inline AI edit | 1 | $0.10 | ~$0.007 | ~93% |
 
 **Why RFP answers cost more than a single inline edit.** An RFP answer is not
@@ -79,9 +78,9 @@ just less than a cold pass. Concretely:
 - **AI knowledge import (2 / entry):** the model has to read a paste, split
   it into logical entries, write titles, and assign tags. 2 credits per
   entry detected — predictable so users can plan a big import.
-- **Editor assistant (2–4):** the side-panel assistant answers questions
-  *about the document you're editing* — recall + analyse + answer in tone,
-  like a mini-RFP scoped to one document.
+- **Inline AI edit (1):** rewrite / shorten / lengthen / formal / friendly /
+  concise on a selected passage. No knowledge recall, no extra context —
+  just the selected text in, the rewrite out.
 
 Manual editing is always free — it spends no tokens, so it costs no credits.
 This is also the main "feels generous" lever without any token risk.
@@ -100,6 +99,16 @@ flow — drafting a proposal or running a contract review — once, end-to-end.
 It does not let them grind through RFP answers or burn meaningful tokens.
 Outputs are watermarked; knowledge base is capped at 3 entries. Anyone who
 needs more upgrades to Starter.
+
+**Every plan is single-user.** We do not offer teammate seats, multi-user
+workspaces, or enterprise SSO at any price point — those add operational
+weight that doesn't fit a credit-priced product. Customers who need
+multi-user workflows can run separate workspaces under separate accounts.
+
+**Monthly only.** We do not offer annual plans. Annual commitments
+introduce refund and proration complexity around credit allowances that
+isn't worth the slight conversion lift — and they remove our optionality
+to pivot or sunset the product cleanly.
 
 \*Before Stripe fees and fixed costs; assumes full allowance is consumed
 (most users won't use 100%, so realised margin is higher).

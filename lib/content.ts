@@ -18,7 +18,7 @@ export const tools: ToolMeta[] = [
     tagline: "Fill a short form, send a proposal that looks like you spent a week on it.",
     audience: "For agencies & consultants",
     blurb:
-      "A branded, sectioned proposal with a clean pricing table and e-sign-ready export — drafted from a few inputs and your company profile.",
+      "A branded, sectioned proposal with a clean pricing table and a ready-to-send PDF — drafted from a few inputs and your company profile.",
     accent: "bg-silk-lav",
   },
   {
@@ -68,7 +68,7 @@ export const proposalsContent = {
     title: "Win the work with a proposal that",
     accent: "closes",
     rest: ".",
-    sub: "Fill a short form — client, scope, pricing line items — and Rufus writes a sectioned, on-brand proposal with a calculated pricing table and an e-sign-ready export.",
+    sub: "Fill a short form — client, scope, pricing line items — and Rufus writes a sectioned, on-brand proposal with a calculated pricing table and a downloadable, ready-to-send PDF.",
   },
   features: [
     {
@@ -84,8 +84,8 @@ export const proposalsContent = {
       body: "Don't like the Scope wording? Regenerate just that section for a fraction of the credits. Manual edits are always free.",
     },
     {
-      title: "Branded & e-sign ready",
-      body: "Your logo, colours, and fonts applied live. Export to PDF or DOCX, or publish a hosted link the client can sign.",
+      title: "Branded & ready to send",
+      body: "Your logo, colours, and accent applied live. Export a PDF the client can sign with their own tool, or publish a hosted link they can open in a browser.",
     },
   ],
   steps: [
@@ -96,7 +96,7 @@ export const proposalsContent = {
   pricing: { headline: "Per proposal, or a subscription", body: "Pay per proposal generated, or move to a monthly plan with included credits once you're sending often." },
   faqs: [
     { q: "Can I edit the proposal after Rufus drafts it?", a: "Yes — the proposal opens in a full editor. Manual edits never cost credits. You can also regenerate any single section." },
-    { q: "What can I export?", a: "PDF and DOCX, plus a hosted shareable link branded with your kit. The link tracks when your client opens it." },
+    { q: "What can I export?", a: "A branded PDF the client can download and sign with Adobe, DocuSign, or any signing tool of their choice, plus a hosted shareable link that tracks when your client opens it." },
     { q: "Where does the pricing total come from?", a: "From the line items you enter — description, quantity, unit price. Rufus calculates the total and formats it in your default currency." },
   ],
 };

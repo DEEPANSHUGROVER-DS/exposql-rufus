@@ -87,7 +87,7 @@ export function ProposalMock() {
         <motion.span animate={{ rotate: [0, 12, -8, 0] }} transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 2.5 }}>
           <Check className="h-3.5 w-3.5" />
         </motion.span>
-        Branded & e-sign ready
+        Branded & ready to send
       </motion.div>
     </div>
   );

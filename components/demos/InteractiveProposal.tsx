@@ -166,7 +166,7 @@ export function InteractiveProposal() {
                 ))}
               </div>
               <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700">
-                <Check className="h-3.5 w-3.5" /> Branded & e-sign ready
+                <Check className="h-3.5 w-3.5" /> Branded & ready to send
               </div>
             </div>
           </motion.div>

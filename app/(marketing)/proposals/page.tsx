@@ -6,7 +6,7 @@ import { proposalsContent } from "@/lib/content";
 export const metadata: Metadata = {
   title: "Proposals & SOWs — branded proposals, drafted in minutes",
   description:
-    "Fill a short form and Rufus writes a sectioned, on-brand proposal with a calculated pricing table and e-sign-ready export. For agencies and consultants.",
+    "Fill a short form and Rufus writes a sectioned, on-brand proposal with a calculated pricing table and a download-and-send PDF. For agencies and consultants.",
 };
 
 export default function ProposalsPage() {

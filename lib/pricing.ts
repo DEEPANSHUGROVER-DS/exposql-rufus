@@ -64,7 +64,7 @@ export const plans: Plan[] = [
     features: [
       "All three tools",
       "400 AI credits each month",
-      "PDF & DOCX export",
+      "PDF export",
       "Manual editing free",
     ],
     featured: true,
@@ -73,7 +73,7 @@ export const plans: Plan[] = [
   {
     key: "growth",
     name: "Growth",
-    tagline: "For teams sending often",
+    tagline: "For agencies sending often",
     priceMonthly: 99,
     includedCredits: 1200,
     note: "1,200 credits / month",
@@ -89,7 +89,7 @@ export const plans: Plan[] = [
   {
     key: "scale",
     name: "Scale",
-    tagline: "For high-volume teams",
+    tagline: "For high-volume operators",
     priceMonthly: 249,
     includedCredits: 3500,
     note: "3,500 credits / month",
@@ -97,7 +97,7 @@ export const plans: Plan[] = [
       "Everything in Growth",
       "3,500 AI credits each month",
       "Priority generation queue",
-      "Shared workspace seats",
+      "All exports + view-tracking on every hosted link",
     ],
     featured: false,
     stripePriceKey: "scale",
@@ -143,7 +143,6 @@ export const actionCosts: ActionCost[] = [
   { key: "contractFollowup", label: "Ask a follow-up about a contract", min: 3, max: 5, note: "Uses the cached contract — read + analyse + answer" },
   { key: "contractAction", label: "Re-run a contract section", min: 5, max: 8, note: "Re-analyse with the contract still cached" },
   { key: "knowledgeImport", label: "AI import to knowledge base", min: 2, max: 2, unit: "/ entry", note: "Splits + structures each entry with tags" },
-  { key: "editorAssist", label: "Editor assistant (side panel)", min: 2, max: 4, note: "Recalls the document, then answers in tone" },
   { key: "inlineEdit", label: "Inline AI edit (rewrite, shorten…)", min: 1, max: 1, note: "On selected text, no recall" },
 ];
 
