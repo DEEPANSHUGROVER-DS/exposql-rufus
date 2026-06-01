@@ -63,7 +63,10 @@ export function PricingClient() {
                     <span className="text-sm text-ink-400">/mo</span>
                   </div>
                   <p className="mt-1 text-xs text-ink-400">{p.note}</p>
-                  <Link href="/pricing" className={`mt-5 w-full ${p.featured ? "btn-dark" : "btn-soft"}`}>
+                  <Link
+                    href={p.stripePriceKey ? `/checkout?kind=subscription&key=${p.stripePriceKey}` : "/app"}
+                    className={`mt-5 w-full ${p.featured ? "btn-dark" : "btn-soft"}`}
+                  >
                     {p.priceMonthly === 0 ? "Start free" : `Choose ${p.name}`}
                     <ArrowUpRight className="h-4 w-4" />
                   </Link>
@@ -111,7 +114,10 @@ export function PricingClient() {
                           · ${(p.price / p.credits).toFixed(3)}/credit
                         </span>
                       </div>
-                      <Link href="/pricing" className="btn-soft mt-4 w-full py-2.5 text-[13px]">
+                      <Link
+                        href={`/checkout?kind=pack&key=${p.key}`}
+                        className="btn-soft mt-4 w-full py-2.5 text-[13px]"
+                      >
                         Buy pack
                       </Link>
                     </div>
