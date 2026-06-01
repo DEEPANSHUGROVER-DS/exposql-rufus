@@ -35,6 +35,25 @@ export const stripeProductIds = {
   pack2000: "prod_UbBEn1XveQhld8",
 } as const;
 
+/**
+ * Stripe Payment Links — hosted `buy.stripe.com/...` URLs we can drop in
+ * directly from the marketing `/pricing` page. No server session
+ * creation, no auth required. After payment, Stripe redirects to
+ * `/app/settings?checkout=success&plan=…` (or `&pack=…`) and the webhook
+ * matches the resulting customer to a Rufus workspace by email.
+ *
+ * Override per-environment via env vars when you want test-mode links.
+ */
+export const stripePaymentLinks = {
+  starter: process.env.STRIPE_LINK_STARTER || "https://buy.stripe.com/cNi5kDeYP5XS5qr1dqcEw0a",
+  growth: process.env.STRIPE_LINK_GROWTH || "https://buy.stripe.com/aFa00j7wndqk9GH7BOcEw0b",
+  scale: process.env.STRIPE_LINK_SCALE || "https://buy.stripe.com/9B67sL4kb1HCaKL5tGcEw0c",
+  pack100: process.env.STRIPE_LINK_PACK_100 || "https://buy.stripe.com/bJe6oH2c34TO4mn9JWcEw0d",
+  pack300: process.env.STRIPE_LINK_PACK_300 || "https://buy.stripe.com/dRmeVdbMDgCwbOP7BOcEw0e",
+  pack750: process.env.STRIPE_LINK_PACK_750 || "https://buy.stripe.com/5kQ4gzaIz71WaKLcW8cEw0f",
+  pack2000: process.env.STRIPE_LINK_PACK_2000 || "https://buy.stripe.com/00w28rdUL4TOaKL4pCcEw0g",
+} as const;
+
 export type PackKey = "pack100" | "pack300" | "pack750" | "pack2000";
 
 export const packCredits: Record<PackKey, number> = {

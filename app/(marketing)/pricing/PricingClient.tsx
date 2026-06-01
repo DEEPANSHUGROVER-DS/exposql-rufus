@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { ArrowUpRight, Check } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { plans, creditPacks, actionCosts, creditRange } from "@/lib/pricing";
+import { stripePaymentLinks } from "@/lib/stripe";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -63,13 +64,20 @@ export function PricingClient() {
                     <span className="text-sm text-ink-400">/mo</span>
                   </div>
                   <p className="mt-1 text-xs text-ink-400">{p.note}</p>
-                  <Link
-                    href={p.stripePriceKey ? `/checkout?kind=subscription&key=${p.stripePriceKey}` : "/app"}
-                    className={`mt-5 w-full ${p.featured ? "btn-dark" : "btn-soft"}`}
-                  >
-                    {p.priceMonthly === 0 ? "Start free" : `Choose ${p.name}`}
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Link>
+                  {p.stripePriceKey ? (
+                    <a
+                      href={stripePaymentLinks[p.stripePriceKey]}
+                      className={`mt-5 w-full ${p.featured ? "btn-dark" : "btn-soft"}`}
+                    >
+                      Choose {p.name}
+                      <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  ) : (
+                    <Link href="/app" className={`mt-5 w-full ${p.featured ? "btn-dark" : "btn-soft"}`}>
+                      Start free
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Link>
+                  )}
                   <ul className="mt-6 space-y-3">
                     {p.features.map((f) => (
                       <li key={f} className="flex items-start gap-2.5 text-sm text-ink-700">
@@ -114,12 +122,12 @@ export function PricingClient() {
                           · ${(p.price / p.credits).toFixed(3)}/credit
                         </span>
                       </div>
-                      <Link
-                        href={`/checkout?kind=pack&key=${p.key}`}
+                      <a
+                        href={stripePaymentLinks[p.key]}
                         className="btn-soft mt-4 w-full py-2.5 text-[13px]"
                       >
                         Buy pack
-                      </Link>
+                      </a>
                     </div>
                   ))}
                 </div>
