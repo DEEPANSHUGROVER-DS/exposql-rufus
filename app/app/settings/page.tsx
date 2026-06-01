@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Trash2, Upload } from "lucide-react";
 import { useApp } from "@/components/app/AppProvider";
 import { PageHeader, Panel } from "@/components/app/ui";
@@ -108,12 +109,40 @@ function LogoPanel() {
 }
 
 export default function SettingsPage() {
-  const { profile, setProfile, plan, creditsIncluded, creditsUsed, remaining, ledger } = useApp();
+  const { profile, setProfile, plan, creditsIncluded, creditsUsed, remaining, ledger, refresh } = useApp();
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<"brand" | "billing">("brand");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const currentPlan = plans.find((p) => p.key === plan);
+
+  // Auto-trigger checkout when arriving from /pricing with ?upgrade= or ?pack=
+  // and surface a success toast when Stripe redirects back with ?checkout=success.
+  useEffect(() => {
+    const upgrade = searchParams.get("upgrade");
+    const pack = searchParams.get("pack");
+    const checkoutResult = searchParams.get("checkout");
+
+    if (checkoutResult === "success") {
+      setTab("billing");
+      // Webhook may take a beat — refresh state after a short delay
+      const t = setTimeout(() => void refresh(), 1500);
+      return () => clearTimeout(t);
+    }
+    if (upgrade && (upgrade === "starter" || upgrade === "growth" || upgrade === "scale")) {
+      setTab("billing");
+      void autoCheckout("subscription", upgrade);
+    } else if (pack && (pack === "pack100" || pack === "pack300" || pack === "pack750" || pack === "pack2000")) {
+      setTab("billing");
+      void autoCheckout("pack", pack);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  async function autoCheckout(kind: "subscription" | "pack", key: string) {
+    await checkout(kind, key);
+  }
 
   async function checkout(kind: "subscription" | "pack", key: string) {
     setBusy(key);

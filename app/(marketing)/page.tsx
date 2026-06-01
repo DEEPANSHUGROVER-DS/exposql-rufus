@@ -39,12 +39,13 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/app" className="btn-dark">
-                Open the app <ArrowUpRight className="h-4 w-4" />
+                Start free <ArrowUpRight className="h-4 w-4" />
               </Link>
               <Link href="/proposals" className="btn-soft">
                 See how it works
               </Link>
             </div>
+            <p className="mt-3 text-xs text-ink-400">20 free credits · no card required</p>
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ink-400">
               <span className="inline-flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-silk-lav" /> Proposals & SOWs

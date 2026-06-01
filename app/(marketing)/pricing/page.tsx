@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Reveal } from "@/components/Reveal";
 import { Faq } from "@/components/Faq";
 import { CTA } from "@/components/CTA";
+import { auth } from "@/auth";
 import { PricingClient } from "./PricingClient";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Pricing — plans and credit packs",
@@ -15,9 +18,13 @@ const pricingFaqs = [
   { q: "Do credits expire?", a: "No. Credit packs you buy never expire. Monthly plan allowances refresh each month." },
   { q: "Can I buy credits without a subscription?", a: "Yes. Credit packs are available to anyone, with no monthly plan required." },
   { q: "What happens when I hit zero?", a: "AI actions pause until you top up with a pack or your monthly allowance refreshes. A credit ledger records every spend and purchase." },
+  { q: "Do I need to sign up before paying?", a: "No, but we recommend it. The fastest path is to start free (20 credits, no card), try a real task end-to-end, then upgrade in-app where your subscription links cleanly to your account. If you'd rather pay upfront, the pricing buttons send you to Stripe — just use the same email when you sign in afterwards." },
 ];
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const session = await auth();
+  const isAuthed = Boolean(session?.user?.email);
+
   return (
     <>
       <section className="px-5 pb-12 pt-36 sm:px-8 sm:pt-44">
@@ -33,13 +40,17 @@ export default function PricingPage() {
               Plans include monthly AI credits. Buy credit packs any time. Manual editing is always free,
               and every AI action shows its cost before you click.
             </p>
+            <p className="mx-auto mt-3 max-w-xl text-center text-xs text-ink-400">
+              Recommended: <strong>start free</strong>, try one task end-to-end, then upgrade in-app. Or
+              pay below and sign in after with the same email.
+            </p>
           </Reveal>
         </div>
       </section>
 
       <section className="pb-8">
         <div className="container-x">
-          <PricingClient />
+          <PricingClient isAuthed={isAuthed} />
         </div>
       </section>
 

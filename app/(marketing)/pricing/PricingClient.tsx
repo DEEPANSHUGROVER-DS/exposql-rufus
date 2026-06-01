@@ -10,8 +10,24 @@ import { stripePaymentLinks } from "@/lib/stripe";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
-export function PricingClient() {
+export function PricingClient({ isAuthed = false }: { isAuthed?: boolean }) {
   const [mode, setMode] = useState<"plans" | "credits">("plans");
+
+  /**
+   * Smart routing per-button:
+   * - Signed-in users go to /app/settings?upgrade=... so the in-app
+   *   Checkout Session reuses their Stripe customer.
+   * - Anonymous users get the Stripe Payment Link (anon-friendly, no
+   *   sign-in step before payment).
+   */
+  function planHref(key: "starter" | "growth" | "scale"): string {
+    if (isAuthed) return `/app/settings?upgrade=${key}`;
+    return stripePaymentLinks[key];
+  }
+  function packHref(key: "pack100" | "pack300" | "pack750" | "pack2000"): string {
+    if (isAuthed) return `/app/settings?pack=${key}`;
+    return stripePaymentLinks[key];
+  }
 
   return (
     <div>
@@ -66,7 +82,7 @@ export function PricingClient() {
                   <p className="mt-1 text-xs text-ink-400">{p.note}</p>
                   {p.stripePriceKey ? (
                     <a
-                      href={stripePaymentLinks[p.stripePriceKey]}
+                      href={planHref(p.stripePriceKey)}
                       className={`mt-5 w-full ${p.featured ? "btn-dark" : "btn-soft"}`}
                     >
                       Choose {p.name}
@@ -123,7 +139,7 @@ export function PricingClient() {
                         </span>
                       </div>
                       <a
-                        href={stripePaymentLinks[p.key]}
+                        href={packHref(p.key)}
                         className="btn-soft mt-4 w-full py-2.5 text-[13px]"
                       >
                         Buy pack
