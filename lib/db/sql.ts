@@ -160,4 +160,7 @@ ALTER TABLE "contract_review" ADD COLUMN IF NOT EXISTS "source_text" text NOT NU
 ALTER TABLE "contract_review" ADD COLUMN IF NOT EXISTS "followups" jsonb NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE "workspace" ADD COLUMN IF NOT EXISTS "deletion_requested_at" timestamp;
 ALTER TABLE "workspace" ADD COLUMN IF NOT EXISTS "logo_blob_url" text;
+
+-- Migration 003: switch to pay-as-you-go (no free welcome credits)
+ALTER TABLE "workspace" ALTER COLUMN "credits_included" SET DEFAULT 0;
 `.trim();

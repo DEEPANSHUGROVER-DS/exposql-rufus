@@ -38,14 +38,8 @@ export async function ensureUserAndWorkspace(profile: {
   if (!workspace) {
     const [created] = await db.insert(workspaces).values({ ownerId: user.id }).returning();
     workspace = created;
-    // Seed the ledger with the free starting balance grant
-    await db.insert(creditLedger).values({
-      workspaceId: workspace.id,
-      delta: workspace.creditsIncluded,
-      reason: "Free plan starting credits",
-      source: "grant",
-    });
-    // Welcome email — no-op when RESEND_API_KEY isn't set
+    // Pay-as-you-go: no welcome credit grant. The user buys their first
+    // pack (or subscribes) to load credits.
     void sendWelcomeEmail(user.email, user.name).catch(() => {});
   }
 

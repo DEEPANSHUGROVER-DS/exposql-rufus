@@ -89,16 +89,24 @@ This is also the main "feels generous" lever without any token risk.
 
 | Plan | Price/mo | Included credits | Token COGS of allowance | Gross margin* |
 |---|---|---|---|---|
-| Free | $0 | **20 (one-time)** — enough for one proposal *or* one short contract review | ~$0.24 | acquisition cost |
+| **Pay as you go** | $0 | **0** — buy credit packs from $15 (100 credits) | $0 | n/a (zero free spend) |
 | Starter | $39 | 400 | ~$4.80 | ~88% |
 | Growth | $99 | 1,200 | ~$14.40 | ~85% |
 | Scale | $249 | 3,500 | ~$42.00 | ~83% |
 
-**Why Free is one task.** 20 credits lets a curious visitor try the strongest
-flow — drafting a proposal or running a contract review — once, end-to-end.
-It does not let them grind through RFP answers or burn meaningful tokens.
-Outputs are watermarked; knowledge base is capped at 3 entries. Anyone who
-needs more upgrades to Starter.
+**Why pay-as-you-go, not a free tier with bundled credits.** We can't sustain
+giving away credits at scale — every free credit costs us real Anthropic API
+spend. Pay-as-you-go gives visitors all the *trial* of a free tier (signup,
+workspace, brand kit, knowledge base curation) without any AI spend on our
+side until they decide to buy a pack. First purchase ask is **$15 for 100
+credits** — the easiest possible "yes" — well below a $39 monthly
+commitment.
+
+**Why we don't offer a small bundled trial** (e.g. 5 free credits to try one
+small generation): even 5 credits at ~$0.012 worst-case COGS is $0.06 per
+signup, and at the kind of signup rate a viral marketing moment can drive,
+that becomes a real bill with no recovery if the user never converts.
+Pay-as-you-go keeps the unit economics protected from day one.
 
 **Every plan is single-user.** We do not offer teammate seats, multi-user
 workspaces, or enterprise SSO at any price point — those add operational
@@ -109,6 +117,14 @@ multi-user workflows can run separate workspaces under separate accounts.
 introduce refund and proration complexity around credit allowances that
 isn't worth the slight conversion lift — and they remove our optionality
 to pivot or sunset the product cleanly.
+
+**Model lock: Sonnet/Haiku only, no Opus.** `lib/ai/anthropic.ts` enforces
+an allowlist on the `ANTHROPIC_MODEL` env var — anything containing "opus"
+or outside `claude-sonnet-4-X` / `claude-haiku-4-X` is silently rejected
+and falls back to Sonnet. Opus costs ~5x Sonnet and we cannot let it slip
+into a request path through env misconfiguration. If Anthropic releases a
+new Sonnet/Haiku version, add it to the allowlist; an Opus tier never
+gets added.
 
 \*Before Stripe fees and fixed costs; assumes full allowance is consumed
 (most users won't use 100%, so realised margin is higher).

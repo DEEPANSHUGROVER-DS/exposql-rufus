@@ -41,15 +41,16 @@ export interface Plan {
 export const plans: Plan[] = [
   {
     key: "free",
-    name: "Free",
-    tagline: "Try one task",
+    name: "Pay as you go",
+    tagline: "Free signup, pay per use",
     priceMonthly: 0,
-    includedCredits: 20,
-    note: "One-time · outputs watermarked",
+    includedCredits: 0,
+    note: "Free to sign up · buy credits from $15",
     features: [
-      "Try one proposal OR one contract review",
+      "Free signup, brand kit, & knowledge base",
       "Manual editing always free",
-      "Knowledge base up to 3 entries",
+      "Buy credit packs from $15 (100 credits)",
+      "No monthly commitment",
     ],
     featured: false,
     stripePriceKey: null,

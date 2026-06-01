@@ -18,7 +18,7 @@ const pricingFaqs = [
   { q: "Do credits expire?", a: "No. Credit packs you buy never expire. Monthly plan allowances refresh each month." },
   { q: "Can I buy credits without a subscription?", a: "Yes. Credit packs are available to anyone, with no monthly plan required." },
   { q: "What happens when I hit zero?", a: "AI actions pause until you top up with a pack or your monthly allowance refreshes. A credit ledger records every spend and purchase." },
-  { q: "Do I need to sign up before paying?", a: "No, but we recommend it. The fastest path is to start free (20 credits, no card), try a real task end-to-end, then upgrade in-app where your subscription links cleanly to your account. If you'd rather pay upfront, the pricing buttons send you to Stripe — just use the same email when you sign in afterwards." },
+  { q: "Do I need to sign up before paying?", a: "No, but it's the cleanest path. Free signup gets you the workspace, brand kit, and knowledge base setup at zero cost. You only pay when you're ready to generate — credit packs start at $15. If you'd rather pay upfront, the pricing buttons send you to Stripe — just use the same email when you sign in afterwards so your purchase links cleanly to your account." },
 ];
 
 export default async function PricingPage() {

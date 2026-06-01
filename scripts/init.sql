@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS "workspace" (
   "stripe_subscription_id" text,
   "subscription_status" text,
   "current_period_end" timestamp,
-  "credits_included" integer NOT NULL DEFAULT 20,
+  "credits_included" integer NOT NULL DEFAULT 0,
   "credits_bought" integer NOT NULL DEFAULT 0,
   "credits_used" integer NOT NULL DEFAULT 0,
   "logo_url" text NOT NULL DEFAULT '',

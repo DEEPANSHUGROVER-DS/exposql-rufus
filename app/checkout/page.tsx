@@ -32,8 +32,9 @@ export const runtime = "nodejs";
  *
  * 3. Anything misconfigured → fall back to /pricing with an error param.
  *
- * Free plan doesn't go through here — its button on /pricing links to /app
- * directly (free credits are granted on first workspace creation).
+ * Pay-as-you-go (free signup) doesn't go through here — its button on
+ * /pricing links to /app directly. Workspaces start with zero credits;
+ * the user buys a pack or subscribes when they want to generate.
  */
 export default async function CheckoutPage({
   searchParams,

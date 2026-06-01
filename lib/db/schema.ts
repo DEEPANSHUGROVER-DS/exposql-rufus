@@ -75,8 +75,9 @@ export const workspaces = pgTable("workspace", {
   subscriptionStatus: text("subscription_status"),
   currentPeriodEnd: timestamp("current_period_end"),
 
-  // credits
-  creditsIncluded: integer("credits_included").notNull().default(20),
+  // credits — pay-as-you-go: zero by default, the user buys packs or
+  // subscribes to load creditsIncluded
+  creditsIncluded: integer("credits_included").notNull().default(0),
   creditsBought: integer("credits_bought").notNull().default(0),
   creditsUsed: integer("credits_used").notNull().default(0),
 

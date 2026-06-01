@@ -64,9 +64,14 @@ export function sendWelcomeEmail(to: string, name: string | null) {
 
 Welcome to Rufus — the AI workspace for proposals, RFP responses, and contract review.
 
-You start with 20 free credits — enough to try one proposal or one contract review end-to-end. Manual editing is always free.
+Rufus is pay-as-you-go: free to sign up, browse the workspace, and curate your knowledge base. When you're ready to generate, buy a credit pack (starts at $15 for 100 credits) or subscribe to a monthly plan.
 
-Get started: https://rufus.exposql.com/app
+A good first hour:
+  1. Add a few knowledge entries (security overview, pricing approach, company background)
+  2. Pick a credit pack: https://rufus.exposql.com/pricing
+  3. Try the strongest tool on your knowledge base: https://rufus.exposql.com/app/rfp
+
+Manual editing is always free, on every plan.
 
 Questions? Just reply to this email.
 
