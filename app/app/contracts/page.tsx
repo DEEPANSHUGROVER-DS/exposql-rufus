@@ -15,7 +15,7 @@ const ease = [0.22, 1, 0.36, 1] as const;
 type Severity = "high" | "medium" | "low";
 type Tab = "summary" | "flags" | "edits";
 
-const MAX_CHARS = 60000;
+const MAX_CHARS = 150000;
 
 function followupCost(q: string): number {
   const len = q.trim().length;

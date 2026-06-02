@@ -3,7 +3,6 @@ import { auth } from "@/auth";
 import { db, DB_CONFIGURED } from "@/lib/db";
 import { knowledgeEntries } from "@/lib/db/schema";
 import { ensureUserAndWorkspace, listKnowledge } from "@/lib/db/queries";
-import { plans } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,14 +33,9 @@ export async function POST(req: Request) {
     image: session.user.image,
   });
 
-  // Free plan cap: 3 entries
-  if (workspace.plan === "free") {
-    const existing = await listKnowledge(workspace.id);
-    const cap = plans.find((p) => p.key === "free")?.includedCredits ? 3 : 3;
-    if (existing.length >= cap) {
-      return NextResponse.json({ error: "free_plan_knowledge_cap", cap }, { status: 402 });
-    }
-  }
+  // Pay-as-you-go: no KB cap. The user pays per RFP call, so they're
+  // naturally bounded by their own spend — no need for an arbitrary count
+  // limit.
 
   const [created] = await db
     .insert(knowledgeEntries)

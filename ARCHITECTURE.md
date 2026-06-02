@@ -167,7 +167,7 @@ package.json
 
 3. **Initialise Drizzle eagerly, never behind a Proxy.** Wrapping the client in a JS Proxy breaks dialect detection at build time. → `lib/db/index.ts` instantiates the client at module load using a placeholder URL if `DATABASE_URL` is unset so the build doesn't crash.
 
-4. **On first app load, upsert the user row before inserting the workspace.** Same FK-crash story. → `ensureUserAndWorkspace()` does both in the correct order; also grants 20 free credits with a ledger entry on first workspace creation.
+4. **On first app load, upsert the user row before inserting the workspace.** Same FK-crash story. → `ensureUserAndWorkspace()` does both in the correct order. (No starting credit grant — pay-as-you-go signups start with a zero balance.)
 
 5. **Add diagnostics early.** → `/api/health/auth` returns a JSON checklist of env vars + a one-row probe against the users table; `/api/admin/db-setup` runs the schema with a `SETUP_TOKEN` header. Both were in the brief and both saved hours during initial bootstrapping.
 

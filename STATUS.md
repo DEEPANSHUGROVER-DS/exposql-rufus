@@ -138,7 +138,7 @@ extended with a monthly/yearly toggle.
 - **PDF text extraction uses a CDN-hosted pdf.js worker** (`unpkg.com`). If your environment blocks CDNs, swap to a self-hosted worker file in `/public`.
 - **PDF export renders plain text** in section bodies — no rich formatting. When Tiptap lands, the PDF renderer needs an HTML→react-pdf parser (or we strip tags).
 - **Admin Refund helper not built** — refunds today happen in Stripe Dashboard. Logging the resulting credit-clawback into our ledger is also manual.
-- **Free plan KB cap is 3 entries** — server enforces, both modals now surface the error cleanly.
+- **No KB cap.** Pay-as-you-go: users pay per RFP call, so they're naturally bounded by their own spend.
 - **Stripe Customer Portal requires a one-time dashboard config** before the button works.
 
 ---
@@ -147,7 +147,7 @@ extended with a monthly/yearly toggle.
 
 - **Kept the ExpoSQL design kit** over Fraunces/Inter rebuild.
 - **Marketing site shipped first, then the app on top.** App lives under `/app/*`.
-- **Free plan deliberately tightened** to "one task only" (one proposal *or* one contract review), 20 credits, watermarked, KB cap 3.
+- **Pay-as-you-go** is the entry tier (replaced the old "Free" tier with 20 included credits). Free signup, zero bundled credits, first purchase is a $15 / 100-credit pack. No watermark, no KB cap. Protects our Anthropic spend from day one.
 - **RFP answer cost is 2–4 per question** (not flat 1) because the work involves recall + analysis + tone-matching.
 - **Reruns are not free.** Section regen, contract follow-ups, RFP re-answers all cost.
 - **Stripe management partially lifted** — Customer Portal is wired (Settings → Open billing portal). Manual cancel/invoice handling is gone.

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db, DB_CONFIGURED } from "@/lib/db";
 import { knowledgeEntries } from "@/lib/db/schema";
-import { ensureUserAndWorkspace, spendCredits, grantCredits, listKnowledge } from "@/lib/db/queries";
+import { ensureUserAndWorkspace, spendCredits, grantCredits } from "@/lib/db/queries";
 import { ANTHROPIC_CONFIGURED } from "@/lib/ai/anthropic";
 import { splitIntoEntries } from "@/lib/ai/knowledge";
 import { knowledgeImportCost } from "@/lib/pricing";
@@ -10,8 +10,6 @@ import { knowledgeImportCost } from "@/lib/pricing";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-const FREE_KB_CAP = 3;
 
 export async function POST(req: Request) {
   if (!DB_CONFIGURED) return NextResponse.json({ error: "database_not_configured" }, { status: 503 });
@@ -29,14 +27,6 @@ export async function POST(req: Request) {
     name: session.user.name,
     image: session.user.image,
   });
-
-  // Free plan cap on KB size — check before spending
-  if (workspace.plan === "free") {
-    const existing = await listKnowledge(workspace.id);
-    if (existing.length >= FREE_KB_CAP) {
-      return NextResponse.json({ error: "free_plan_knowledge_cap", cap: FREE_KB_CAP }, { status: 402 });
-    }
-  }
 
   // Estimate cost up front from rough block count, then reconcile after
   const roughBlocks = Math.max(1, text.split(/\n\s*\n/).filter((b) => b.trim()).length);
@@ -67,14 +57,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // Respect the free-plan cap: insert up to (cap - existing) only, ignore the rest
-  let slotsLeft = Infinity;
-  if (workspace.plan === "free") {
-    const existing = await listKnowledge(workspace.id);
-    slotsLeft = Math.max(0, FREE_KB_CAP - existing.length);
-  }
-
-  const toInsert = entries.slice(0, slotsLeft);
+  const toInsert = entries;
   const inserted = toInsert.length
     ? await db
         .insert(knowledgeEntries)

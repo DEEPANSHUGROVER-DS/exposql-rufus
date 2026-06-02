@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_CHARS = 60000;
+const MAX_CHARS = 150000;
 
 function cost(question: string): number {
   const len = question.trim().length;

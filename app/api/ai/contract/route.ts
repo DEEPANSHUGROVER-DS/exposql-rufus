@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 90;
 
-const MAX_CHARS = 60000;
+const MAX_CHARS = 150000;
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));

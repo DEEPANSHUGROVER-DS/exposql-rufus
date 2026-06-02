@@ -82,7 +82,7 @@ Routes under `app/(marketing)/`.
 3. NextAuth callback creates a JWT with `email`, `name`, `picture` claims.
 4. On first authenticated API call, `ensureUserAndWorkspace()` (in `lib/db/queries.ts`):
    - SELECT user by email; if missing, INSERT user.
-   - SELECT workspace by ownerId; if missing, INSERT workspace with default values, **grant 20 free credits with a ledger entry** ("Free plan starting credits").
+   - SELECT workspace by ownerId; if missing, INSERT workspace with default values. **No credits granted** — pay-as-you-go signups start with zero. The first generation requires buying a credit pack ($15+) or subscribing.
    - Always lookup by **email**, never by `token.sub` (hard lesson — token sub doesn't map to DB user id).
 5. AppShell checks `onboardingCompletedAt`; if null, redirects to `/app/onboarding`.
 
@@ -147,7 +147,7 @@ Proposals.
 
 ### CRUD (server-backed)
 - ✅ `GET /api/knowledge` — list workspace entries.
-- ✅ `POST /api/knowledge` — create. Server-enforces **3-entry cap on free plan** (returns 402 with `error: "free_plan_knowledge_cap"`).
+- ✅ `POST /api/knowledge` — create. No cap (pay-as-you-go users pay per RFP call, which naturally bounds their KB size).
 - ✅ `PATCH /api/knowledge/[id]` — update title/body/tags.
 - ✅ `DELETE /api/knowledge/[id]` — delete.
 - ✅ Frontend uses optimistic updates with rollback on server error.
@@ -406,9 +406,10 @@ The model is fully implemented; numbers all live in `lib/pricing.ts`.
 - Adds back to `creditsBought` (which is fine since the lookup sums all three).
 - Ledger entry with positive delta and `reason: "Refund: ..."`.
 
-### Free plan starting balance
-- Granted to new workspaces in `ensureUserAndWorkspace()`: 20 credits, ledger entry "Free plan starting credits."
-- The user must complete onboarding before spending them.
+### Pay-as-you-go starting balance
+- New workspaces start with **zero credits** — no welcome grant, no ledger seed.
+- The user must buy a credit pack ($15+) or subscribe before any AI tool will run.
+- Manual editing keeps working without credits (it spends no tokens).
 
 ---
 

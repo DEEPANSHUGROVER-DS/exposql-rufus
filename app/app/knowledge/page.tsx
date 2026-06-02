@@ -199,9 +199,7 @@ function EntryModal({
     });
     if (!result.ok) {
       setError(
-        result.error === "free_plan_knowledge_cap"
-          ? "Free plan caps the knowledge base at 3 entries. Upgrade in Settings to add more."
-          : result.error === "unauthenticated"
+        result.error === "unauthenticated"
           ? "Please sign in again."
           : `Couldn't save entry${result.error ? `: ${result.error}` : ""}.`,
       );
@@ -288,8 +286,6 @@ function ImportModal({
         setError(
           data?.error === "ai_not_configured"
             ? "AI isn't configured yet — set ANTHROPIC_API_KEY on Vercel."
-            : data?.error === "free_plan_knowledge_cap"
-            ? `Free plan is capped at ${data.cap ?? 3} knowledge entries. Upgrade to add more.`
             : data?.error === "insufficient_credits"
             ? "Not enough credits to import. Top up in Settings."
             : data?.error || `Failed (${res.status})`,
@@ -337,7 +333,7 @@ function ImportModal({
       {result && (
         <p className="mt-3 text-xs font-medium text-emerald-700">
           Imported {result.inserted} of {result.detected} detected entr{result.detected === 1 ? "y" : "ies"}
-          {result.skipped > 0 ? ` (${result.skipped} skipped — plan cap)` : ""} · {result.cost} credits.
+ · {result.cost} credits.
         </p>
       )}
 

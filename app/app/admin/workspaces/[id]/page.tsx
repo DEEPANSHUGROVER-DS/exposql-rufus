@@ -171,6 +171,8 @@ export default function AdminWorkspacePage() {
         </Panel>
       </div>
 
+      <WorkspaceItems id={id} />
+
       <h2 className="mt-8 text-sm font-semibold text-ink-500">Pack purchases</h2>
       <Panel className="mt-3">
         <div className="divide-y divide-ink-900/[0.06]">
@@ -216,6 +218,87 @@ function Row({ k, v }: { k: string; v: string }) {
     <div className="flex items-start justify-between gap-3">
       <dt className="shrink-0 text-xs text-ink-400">{k}</dt>
       <dd className="truncate text-right text-sm text-ink-700">{v}</dd>
+    </div>
+  );
+}
+
+interface WorkspaceItemsData {
+  proposals: { id: string; clientName: string; title: string; status: string; hostedSlug: string | null; viewedAt: string | null; updatedAt: string }[];
+  rfps: { id: string; title: string; status: string; updatedAt: string }[];
+  contracts: { id: string; title: string; fileName: string; createdAt: string }[];
+}
+
+function WorkspaceItems({ id }: { id: string }) {
+  const [tab, setTab] = useState<"proposals" | "rfps" | "contracts">("proposals");
+  const [data, setData] = useState<WorkspaceItemsData | null>(null);
+
+  useEffect(() => {
+    void fetch(`/api/admin/workspaces/${id}/items`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setData(d as WorkspaceItemsData));
+  }, [id]);
+
+  const tabs = [
+    { key: "proposals" as const, label: `Proposals (${data?.proposals.length ?? "—"})` },
+    { key: "rfps" as const, label: `RFPs (${data?.rfps.length ?? "—"})` },
+    { key: "contracts" as const, label: `Contracts (${data?.contracts.length ?? "—"})` },
+  ];
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-sm font-semibold text-ink-500">Items</h2>
+      <div className="mt-2 mb-3 flex flex-wrap gap-1.5">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+              tab === t.key ? "bg-ink-900 text-paper-50" : "border border-ink-900/10 text-ink-600 hover:text-ink-900"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <Panel>
+        <div className="divide-y divide-ink-900/[0.06]">
+          {!data && <p className="py-3 text-xs text-ink-400">Loading…</p>}
+          {data && tab === "proposals" && (data.proposals.length === 0
+            ? <p className="py-3 text-xs text-ink-400">No proposals.</p>
+            : data.proposals.map((p) => (
+              <Link key={p.id} href={`/app/proposals/${p.id}`} className="flex items-center justify-between gap-3 py-2.5 hover:bg-paper-100/40 -mx-2 px-2 rounded-lg">
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-ink-800">{p.clientName} — {p.title}</p>
+                  <p className="text-[11px] text-ink-400">
+                    {p.status} · updated {relativeTime(+new Date(p.updatedAt))}
+                    {p.viewedAt && ` · opened ${relativeTime(+new Date(p.viewedAt))}`}
+                    {p.hostedSlug && " · published"}
+                  </p>
+                </div>
+              </Link>
+            )))}
+          {data && tab === "rfps" && (data.rfps.length === 0
+            ? <p className="py-3 text-xs text-ink-400">No RFPs.</p>
+            : data.rfps.map((r) => (
+              <Link key={r.id} href={`/app/rfp/${r.id}`} className="flex items-center justify-between gap-3 py-2.5 hover:bg-paper-100/40 -mx-2 px-2 rounded-lg">
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-ink-800">{r.title}</p>
+                  <p className="text-[11px] text-ink-400">{r.status} · {relativeTime(+new Date(r.updatedAt))}</p>
+                </div>
+              </Link>
+            )))}
+          {data && tab === "contracts" && (data.contracts.length === 0
+            ? <p className="py-3 text-xs text-ink-400">No contracts.</p>
+            : data.contracts.map((c) => (
+              <Link key={c.id} href={`/app/contracts/${c.id}`} className="flex items-center justify-between gap-3 py-2.5 hover:bg-paper-100/40 -mx-2 px-2 rounded-lg">
+                <div className="min-w-0">
+                  <p className="truncate text-sm text-ink-800">{c.title}</p>
+                  <p className="text-[11px] text-ink-400">{c.fileName || "pasted text"} · {relativeTime(+new Date(c.createdAt))}</p>
+                </div>
+              </Link>
+            )))}
+        </div>
+      </Panel>
     </div>
   );
 }

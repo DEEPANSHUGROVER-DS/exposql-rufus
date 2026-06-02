@@ -116,7 +116,7 @@ not a law firm.
 - "Legal advice." We say **"for your review."**
 - "Lawyer," "attorney," "legal opinion." We say **"contract review," "red flags," "plain-English summary," "suggested edits."**
 - "Unlimited." Nothing in this product is unlimited — every AI action costs credits.
-- "Free forever." The free plan is **one task** (one proposal *or* one contract review), one-time credits, watermarked outputs.
+- "Free forever." Signup is free and the workspace is free to explore, but AI generation is pay-as-you-go from a $15 / 100-credit pack. We never give credits for free.
 - "We'll never charge you" or similar. Be explicit about pricing up front.
 
 ### 4.4 What we *do* say
@@ -154,7 +154,7 @@ not a law firm.
 
 - **Law firms.** Rufus is not a substitute for counsel. We won't market to lawyers.
 - **Enterprise procurement** (the buyers of RFPs, not the responders) — not our user.
-- **Pure tinkerers/students.** They love free tiers but never pay. We deliberately tightened the free plan to one task to discourage indefinite freeloading.
+- **Pure tinkerers/students.** They love free tiers but never pay. We protect against indefinite freeloading structurally: signup is free, but every AI action costs credits and we don't grant any at signup. The first generation requires a $15 pack purchase.
 
 ---
 
@@ -180,9 +180,11 @@ Two unshakeable rules:
 1. **Nothing is unlimited.** Every AI action spends credits. No "Pro" plan with infinite generations. This is non-negotiable — it's how we don't get burned by token costs.
 2. **Charged credit price >> token cost** on every action. 1 credit ≈ $0.10 retail, ~$0.012 token COGS → ~8x markup on the cheapest action, 20x+ on proposals. Gross margin stays ~85%+ even on the most cost-heavy actions.
 
-**Free plan is deliberately tight.** 20 credits one-time. Enough for one
-proposal *or* one contract review. Outputs watermarked. KB capped at 3
-entries. Anyone who needs more upgrades to Starter ($39).
+**Entry tier is pay-as-you-go, not free credits.** Free to sign up, set up
+the workspace, brand kit, and knowledge base. Zero bundled credits — the
+first generation requires a $15 / 100-credit pack purchase, or a $39+/mo
+subscription. We never grant credits to unpaid users; every credit costs
+us real Anthropic spend.
 
 **Manual editing is always free.** It's the "feels generous" lever that
 costs us nothing (no tokens spent).
@@ -278,7 +280,7 @@ shell renders the workspace's brand colours and logo instead).
 - **Contracts disclaimer:** "For your review — not legal advice."
 - **Empty KB nudge:** "Your knowledge base is empty. Add a few entries first so Rufus has something to answer from."
 - **No source flag (RFP):** "No source found in your knowledge base — please review and add this fact."
-- **Free plan note:** "Free, one-time credits enough for one proposal or one contract review. No card required."
+- **Entry tier note:** "Free signup · pay only when you generate, from $15"
 - **Pricing footer:** "Pricing is in draft for review — see PRICING.md for the margin model behind these numbers."
 - **App footer / hosted page footer:** "Powered by Rufus" linking to rufus.exposql.com.
 - **Umbrella footer link:** "An ExpoSQL AI Labs product →" linking to exposql.com.

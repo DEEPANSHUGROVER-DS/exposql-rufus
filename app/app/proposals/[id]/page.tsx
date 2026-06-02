@@ -16,6 +16,7 @@ import {
 import { useApp } from "@/components/app/AppProvider";
 import { PageHeader, Panel } from "@/components/app/ui";
 import { PricingEditor } from "@/components/app/PricingEditor";
+import { InlineEditTextarea } from "@/components/app/InlineEditTextarea";
 import { proposalSectionCost } from "@/lib/pricing";
 import type { PricingRow, ProposalRow } from "@/lib/db/schema";
 
@@ -273,11 +274,12 @@ export default function ProposalEditorPage() {
                 <RotateCcw className="h-3 w-3" /> {regenBusy === key ? "Regenerating…" : `Regenerate · ${proposalSectionCost(key)}cr`}
               </button>
             </div>
-            <textarea
+            <InlineEditTextarea
               value={sections[key] ?? ""}
-              onChange={(e) => editSection(key, e.target.value)}
+              onChange={(v) => editSection(key, v)}
               rows={key === "Deliverables" ? rows.length + 2 : 3}
-              className="input resize-none text-sm leading-relaxed"
+              aiDisabled={remaining < 1}
+              onEdited={() => void refresh()}
             />
           </Panel>
         ))}
