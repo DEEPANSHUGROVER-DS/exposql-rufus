@@ -5,6 +5,8 @@ import { db, DB_CONFIGURED } from "@/lib/db";
 import { creditPurchases, workspaces } from "@/lib/db/schema";
 import { ensureUserAndWorkspace, grantCredits } from "@/lib/db/queries";
 import {
+  anyRufusPriceId,
+  isRufusPriceId,
   packCredits,
   stripe,
   stripePrices,
@@ -22,6 +24,30 @@ function priceIdToPlanKey(priceId: string): SubscriptionKey | null {
   if (priceId === stripePrices.growth) return "growth";
   if (priceId === stripePrices.scale) return "scale";
   return null;
+}
+
+function priceIdToPackKey(priceId: string): PackKey | null {
+  if (priceId === stripePrices.pack100) return "pack100";
+  if (priceId === stripePrices.pack300) return "pack300";
+  if (priceId === stripePrices.pack750) return "pack750";
+  if (priceId === stripePrices.pack2000) return "pack2000";
+  return null;
+}
+
+/**
+ * Pulls line-item price IDs for a Checkout Session. The session in the
+ * webhook payload doesn't include line items by default — we have to ask
+ * Stripe for them. Used as the authoritative "is this our product?" test.
+ */
+async function getSessionPriceIds(sessionId: string): Promise<string[]> {
+  try {
+    const items = await stripe.checkout.sessions.listLineItems(sessionId, { limit: 10 });
+    return items.data
+      .map((li) => (typeof li.price === "object" && li.price ? li.price.id : null))
+      .filter((id): id is string => !!id);
+  } catch {
+    return [];
+  }
 }
 
 export async function POST(req: Request) {
@@ -46,17 +72,37 @@ export async function POST(req: Request) {
     case "checkout.session.completed": {
       const s = event.data.object as Stripe.Checkout.Session;
 
+      // Belt + braces: only act on sessions whose line items include a
+      // Rufus price. Metadata can be set by any app sharing the Stripe
+      // account; the price IDs are ours alone.
+      const priceIds = await getSessionPriceIds(s.id);
+      if (!anyRufusPriceId(priceIds)) break;
+
+      // Find which Rufus product was purchased — from the actual line
+      // item, not from metadata. We trust price IDs because we control
+      // them; we treat metadata as a hint only.
+      let planKey: SubscriptionKey | undefined;
+      let packKey: PackKey | undefined;
+      for (const id of priceIds) {
+        const p = priceIdToPlanKey(id);
+        if (p) {
+          planKey = p;
+          break;
+        }
+        const k = priceIdToPackKey(id);
+        if (k) {
+          packKey = k;
+          break;
+        }
+      }
+
       // Two flows produce this event:
       //   1. Authenticated /api/stripe/checkout — metadata.workspaceId is set
-      //   2. Anonymous Payment Link from /pricing — metadata.product === "rufus",
-      //      metadata.kind, metadata.key set; workspace must be resolved by
-      //      the customer's email after Stripe collects it.
+      //   2. Anonymous Payment Link from /pricing — workspace is resolved
+      //      from the customer's email after Stripe collects it
       let workspaceId = s.metadata?.workspaceId;
-      let planKey = s.metadata?.planKey as SubscriptionKey | undefined;
-      let packKey = (s.metadata?.packKey || s.metadata?.key) as PackKey | undefined;
-      let credits = Number(s.metadata?.credits || 0);
 
-      if (!workspaceId && s.metadata?.product === "rufus") {
+      if (!workspaceId) {
         const email = s.customer_details?.email || s.customer_email || null;
         if (!email) break;
         const { workspace } = await ensureUserAndWorkspace({ email, name: s.customer_details?.name ?? null });
@@ -71,23 +117,12 @@ export async function POST(req: Request) {
             .set({ stripeCustomerId })
             .where(eq(workspaces.id, workspace.id));
         }
-
-        // Read kind/key from metadata if not already populated
-        const kind = s.metadata?.kind;
-        const key = s.metadata?.key;
-        if (kind === "subscription" && key) planKey = key as SubscriptionKey;
-        if (kind === "pack" && key) {
-          packKey = key as PackKey;
-          if (!credits && packKey in packCredits) credits = packCredits[packKey];
-        }
       }
 
       if (!workspaceId) break;
 
-      if (s.mode === "payment" && (credits > 0 || (packKey && packKey in packCredits))) {
-        const finalCredits = credits || packCredits[packKey as PackKey];
-        // Upsert the credit_purchase row (Payment Link flow won't have a
-        // prior pending row).
+      if (s.mode === "payment" && packKey) {
+        const finalCredits = packCredits[packKey];
         const existing = await db
           .select()
           .from(creditPurchases)
@@ -102,7 +137,7 @@ export async function POST(req: Request) {
           await db.insert(creditPurchases).values({
             workspaceId,
             stripeSessionId: s.id,
-            packKey: packKey || "unknown",
+            packKey,
             credits: finalCredits,
             amount: s.amount_total ?? 0,
             status: "completed",
@@ -111,7 +146,7 @@ export async function POST(req: Request) {
         await grantCredits(
           workspaceId,
           finalCredits,
-          `Pack purchase: ${packKey ?? "credits"} (${finalCredits} credits)`,
+          `Pack purchase: ${packKey} (${finalCredits} credits)`,
           "purchase",
           s.id,
         );
@@ -132,22 +167,31 @@ export async function POST(req: Request) {
       }
       break;
     }
+
     case "invoice.payment_succeeded": {
       // Monthly renewal — refresh credits to the plan's monthly allowance.
       const inv = event.data.object as Stripe.Invoice;
       const subId = (inv as unknown as { subscription?: string }).subscription;
       if (!subId) break;
+
+      // Price-ID guard: invoice must reference a Rufus price.
+      const lineItems = inv.lines?.data ?? [];
+      const linePriceIds = lineItems
+        .map((li) => (li.pricing?.price_details?.price as string | undefined) ?? null)
+        .filter((x): x is string => !!x);
+      if (!anyRufusPriceId(linePriceIds)) break;
+
       const [ws] = await db
         .select()
         .from(workspaces)
         .where(eq(workspaces.stripeSubscriptionId, String(subId)))
         .limit(1);
       if (!ws) break;
-      const lineItems = inv.lines?.data ?? [];
-      const priceId = lineItems[0]?.pricing?.price_details?.price as string | undefined;
-      const planKey = priceId ? priceIdToPlanKey(priceId) : (ws.plan as SubscriptionKey | "free");
-      if (planKey && planKey !== "free") {
-        const monthly = subscriptionMonthlyCredits[planKey as SubscriptionKey];
+
+      const rufusPriceId = linePriceIds.find(isRufusPriceId);
+      const planKey = rufusPriceId ? priceIdToPlanKey(rufusPriceId) : null;
+      if (planKey) {
+        const monthly = subscriptionMonthlyCredits[planKey];
         await db
           .update(workspaces)
           .set({
@@ -160,9 +204,15 @@ export async function POST(req: Request) {
       }
       break;
     }
+
     case "customer.subscription.deleted":
     case "customer.subscription.updated": {
       const sub = event.data.object as Stripe.Subscription;
+
+      // Price-ID guard: subscription must reference a Rufus price.
+      const subItemPriceIds = sub.items?.data?.map((it) => it.price?.id ?? null) ?? [];
+      if (!anyRufusPriceId(subItemPriceIds)) break;
+
       const [ws] = await db
         .select()
         .from(workspaces)

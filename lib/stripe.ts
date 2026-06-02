@@ -54,6 +54,27 @@ export const stripePaymentLinks = {
   pack2000: process.env.STRIPE_LINK_PACK_2000 || "https://buy.stripe.com/00w28rdUL4TOaKL4pCcEw0g",
 } as const;
 
+/**
+ * The canonical set of Rufus price IDs — the single source of truth the
+ * webhook checks against to decide whether an event belongs to us.
+ *
+ * Sibling ExpoSQL apps live in the same Stripe account; this guard ensures
+ * a stray event from another product can never grant Rufus credits or
+ * flip a Rufus workspace's plan, even if it accidentally carries
+ * matching metadata.
+ */
+const RUFUS_PRICE_SET = new Set<string>(Object.values(stripePrices));
+
+export function isRufusPriceId(id?: string | null): boolean {
+  if (!id) return false;
+  return RUFUS_PRICE_SET.has(id);
+}
+
+/** Returns true if any of the supplied price IDs is a Rufus price. */
+export function anyRufusPriceId(ids: Array<string | null | undefined>): boolean {
+  return ids.some((id) => isRufusPriceId(id));
+}
+
 export type PackKey = "pack100" | "pack300" | "pack750" | "pack2000";
 
 export const packCredits: Record<PackKey, number> = {
