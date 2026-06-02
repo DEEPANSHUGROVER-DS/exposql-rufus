@@ -156,7 +156,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Menu className="h-4 w-4" />
           </button>
           <div className="hidden text-sm font-medium text-ink-500 lg:block">
-            {displayName} · <span className="capitalize text-ink-400">{plan} plan</span>
+            {displayName} · <span className="capitalize text-ink-400">{plan === "free" ? "Pay as you go" : `${plan} plan`}</span>
           </div>
           <div className="flex items-center gap-3">
             <SearchPalette />

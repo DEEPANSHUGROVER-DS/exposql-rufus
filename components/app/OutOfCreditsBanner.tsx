@@ -57,7 +57,7 @@ export function OutOfCreditsBanner({ threshold = 0, className = "" }: { threshol
           </p>
         </div>
       </div>
-      <Link href="/app/settings" className="btn-dark py-2.5 text-[12px]">
+      <Link href="/app/settings?tab=billing" className="btn-dark py-2.5 text-[12px]">
         {firstTime ? "Buy credits" : "Top up"} <ArrowRight className="h-3.5 w-3.5" />
       </Link>
     </div>

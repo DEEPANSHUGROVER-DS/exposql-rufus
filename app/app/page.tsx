@@ -22,21 +22,34 @@ export default function DashboardPage() {
     contract: recent.filter((r) => r.kind === "contract").length,
   };
 
+  const planLabel = plan === "free" ? "Pay as you go" : plan;
+  const planSub =
+    plan === "free" ? "Buy credit packs as needed" : `${creditsIncluded.toLocaleString()} credits / mo`;
+
   const tiles = [
-    { label: "Plan", value: plan, sub: `${creditsIncluded.toLocaleString()} credits / mo`, capital: true },
-    { label: "Credits remaining", value: remaining.toLocaleString(), sub: "this cycle" },
+    { label: "Plan", value: planLabel, sub: planSub, capital: plan !== "free" },
+    { label: "Credits remaining", value: remaining.toLocaleString(), sub: plan === "free" ? "ever" : "this cycle" },
     { label: "Proposals", value: counts.proposal, sub: "this month" },
     { label: "RFPs · Contracts", value: `${counts.rfp} · ${counts.contract}`, sub: "this month" },
   ];
 
   const firstName = profile.companyName.trim().split(" ")[0] || "there";
 
+  // Show the getting-started checklist on a brand-new workspace: no recent
+  // items in any tool, no spent credits, no purchased credits, no ledger
+  // activity at all. Once the user takes any action it disappears.
+  const isFreshWorkspace = recent.length === 0 && remaining === 0 && knowledge.length < 2;
+
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title={`Welcome back, ${firstName}`}
-        subtitle="Your document workspace at a glance. Pick up where you left off, or start something new."
+        title={`Welcome${isFreshWorkspace ? "" : " back"}, ${firstName}`}
+        subtitle={isFreshWorkspace
+          ? "Three quick steps and you're generating. Manual editing is always free."
+          : "Your document workspace at a glance. Pick up where you left off, or start something new."}
       />
+
+      {isFreshWorkspace && <GettingStarted hasKnowledge={knowledge.length > 0} />}
 
       {/* stat tiles */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -110,6 +123,74 @@ export default function DashboardPage() {
             Manage knowledge
           </Link>
         </Panel>
+      </div>
+    </div>
+  );
+}
+
+function GettingStarted({ hasKnowledge }: { hasKnowledge: boolean }) {
+  const steps = [
+    {
+      done: hasKnowledge,
+      title: "Add a few knowledge entries",
+      body: "Security overview, pricing approach, company background — anything Rufus should answer from.",
+      href: "/app/knowledge",
+      cta: "Add knowledge",
+      icon: BookOpen,
+      accent: "bg-silk-mint/40",
+    },
+    {
+      done: false,
+      title: "Buy your first credit pack",
+      body: "Pay-as-you-go starts at $15 for 100 credits — enough for ~5 proposals or one big contract review. Credits never expire.",
+      href: "/app/settings?tab=billing",
+      cta: "Buy credits",
+      icon: Sparkles,
+      accent: "bg-silk-peach/40",
+    },
+    {
+      done: false,
+      title: "Generate your first document",
+      body: "Pick a tool and Rufus drafts in seconds. Manual editing afterwards is always free.",
+      href: "/app/proposals/new",
+      cta: "Start a proposal",
+      icon: FileText,
+      accent: "bg-silk-lav/40",
+    },
+  ];
+
+  return (
+    <div className="mb-10 rounded-[26px] border border-accent/20 bg-accent/[0.04] p-5 shadow-soft sm:p-7">
+      <div className="mb-4 flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-accent" />
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-accent">Getting started</h2>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {steps.map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <Link
+              key={s.title}
+              href={s.href}
+              className="group flex h-full flex-col rounded-2xl border border-ink-900/[0.06] bg-white p-4 transition-all hover:-translate-y-0.5 hover:shadow-lift"
+            >
+              <div className="flex items-center gap-2">
+                <span className={`grid h-8 w-8 place-items-center rounded-xl ${s.accent}`}>
+                  <Icon className="h-4 w-4 text-ink-900" />
+                </span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">
+                  Step {i + 1}{s.done ? " · done" : ""}
+                </span>
+              </div>
+              <h3 className="mt-3 text-sm font-semibold text-ink-900">{s.title}</h3>
+              <p className="mt-1 text-xs leading-relaxed text-ink-500">{s.body}</p>
+              <span className="mt-auto pt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-accent">
+                {s.cta}
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

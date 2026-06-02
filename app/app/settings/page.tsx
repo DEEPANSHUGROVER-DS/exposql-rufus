@@ -122,8 +122,12 @@ export default function SettingsPage() {
   useEffect(() => {
     const upgrade = searchParams.get("upgrade");
     const pack = searchParams.get("pack");
+    const tabParam = searchParams.get("tab");
     const checkoutResult = searchParams.get("checkout");
 
+    if (tabParam === "billing" || tabParam === "brand") {
+      setTab(tabParam);
+    }
     if (checkoutResult === "success") {
       setTab("billing");
       // Webhook may take a beat — refresh state after a short delay
@@ -243,7 +247,9 @@ export default function SettingsPage() {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-medium text-ink-400">Current plan</p>
-                <p className="mt-1 text-2xl font-semibold capitalize tracking-[-0.02em] text-ink-900">{plan}</p>
+                <p className="mt-1 text-2xl font-semibold tracking-[-0.02em] text-ink-900">
+                  {plan === "free" ? "Pay as you go" : <span className="capitalize">{plan}</span>}
+                </p>
                 <p className="text-xs text-ink-400">
                   ${currentPlan?.priceMonthly}/mo · {creditsIncluded.toLocaleString()} credits / cycle
                 </p>
